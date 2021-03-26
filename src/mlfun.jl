@@ -1,5 +1,7 @@
 #Ml functions
 
+"""Emulates rounding of array indices"""
+array_round(i) = round(Int, i) #VERIFYME
 
 function cplxpair(a)
 	epstol = 100

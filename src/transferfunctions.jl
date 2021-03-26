@@ -1,3 +1,4 @@
+#Utilities for transfer functions
 
 """`y = evalRPoly(roots,x,k=1)`
 Compute the value of a polynomial which is given in terms of its roots.
@@ -41,5 +42,21 @@ function evalTF(tf,z)
 #    h = tf.k * evalRPoly(tf.zeros,z) ./ evalRPoly(tf.poles,z);
 #end
 end
+
+
+#==Calculators
+===============================================================================#
+
+"""`g = rmsGain(H,f1,f2,N=100)`
+
+Compute the root mean-square gain of the discrete-time
+tf H in the frequency band (f1,f2)
+"""
+function rmsGain(H,f1,f2,N::Int=100)
+	w = collect(range(2*pi*f1, stop=2*pi*f2, length=N))
+	g = norm( evalTF(H, exp.(j*w)) ) / sqrt(N)
+	return g
+end
+
 
 #Last line

@@ -42,10 +42,11 @@ Returns the zeros which minimize the in-band noise power of
 a delta-sigma modulator's NTF.
 """
 function ds_optzeros(n, opt=1)
+	norig = n; n = array_round(n) #VERIFYME
 	local optZeros
 
 	if opt==0
-		optZeros = zeros(ceil(n/2));
+		optZeros = zeros(ceil(norig/2));
 	elseif n > length(_VALUES_OPTZEROS_OPT1)
 		throw(ErrorException("Optimized zeros for n>14 are not available."))
 	elseif opt==1

@@ -1,36 +1,7 @@
-function synthesizeNTF0(order,OSR,opt,H_inf,f0)
-	j = im
-	#Determine the zeros.
-	if f0!=0		#Bandpass design-- halve the order temporarily.
-		order = order/2
-		dw = pi/(2*OSR)
-	else
-		dw = pi/OSR
-	end
-
-	if length(opt)==1
-		if opt==0
-			z = zeros(order)
-		else
-			z = dw*ds_optzeros(order,opt)
-			if isempty(z)
-				throw_unreachable()
-				return;
-			end
-		end
-		if f0!=0		# Bandpass design-- shift and replicate the zeros.
-			order = order*2
-			z = z + 2*pi*f0
-			z = conj.(z)
-			z = vcat(z, -z)
-		end
-		z = exp.(j*z)
-	else
-		z = opt[:]
-	end
-
+function synthesizeNTF0_z(order::Float64, OSR::Int, z::Vector{Complex{Float64}}, H_inf::Float64, f0::Float64)
+	order_i = array_round(order)
 	Ts = 1.0
-	ntf = _zpk(z,zeros(order),1,Ts)
+	ntf = _zpk(z,zeros(order_i),1,Ts)
 	itn_limit = 100
 	#ntf_z, ntf_p, ntf_k, = zpkdata(ntf)
 
@@ -51,7 +22,7 @@ function synthesizeNTF0(order,OSR,opt,H_inf,f0)
 		HinfLimit = 2^order  # !!! The limit is actually lower for opt=1 and low OSR
 		if H_inf >= HinfLimit
 			warn_Hinf()
-			ntf.p = zeros(order)
+			ntf.p = zeros(order_i)
 		else
 			x=0.3^(order-1) # starting guess
 			converged = 0
@@ -59,7 +30,7 @@ function synthesizeNTF0(order,OSR,opt,H_inf,f0)
 			local delta_x = 0 #Initialize
 			for itn=1:itn_limit
 				me2 = -0.5*(x^(2/order))
-				w = (2*collect(1:order) .- 1)*pi/order
+				w = (2*collect(1:order_i) .- 1)*pi/order #VERIFYME
 				mb2 = 1 .+ me2*exp.(j*w)
 				p = mb2 - sqrt.(mb2 .^ 2 .- 1)
 				out = findall(abs.(p) .> 1)
@@ -87,7 +58,7 @@ function synthesizeNTF0(order,OSR,opt,H_inf,f0)
 				end
 				if x>1e6
 					warn_Hinf()
-					ntf.z = z; ntf.p = zeros(order)
+					ntf.z = z; ntf.p = zeros(order_i)
 					break;
 				end
 				if itn == itn_limit
@@ -102,15 +73,15 @@ function synthesizeNTF0(order,OSR,opt,H_inf,f0)
 		else
 			z_inf=-1
 		end
-		c2pif0 = cos(2*pi*f0)
+		c2pif0 = cos(2π*f0)
 		local fprev = 0 #Initialize
 		local delta_x = 0 #Initialize
 		for itn=1:itn_limit
 			e2 = 0.5*x^(2/order)
-			w = (2*collect(1:order) .- 1)*pi/order
+			w = (2*collect(1:order_i) .- 1)*pi/order #VERIFYME
 
-			mb2 = c2pif0 + e2*exp(j*w)
-			p = mb2 - sqrt(mb2.^2-1)
+			mb2 = c2pif0 .+ e2*exp.(j*w)
+			p = mb2 .- sqrt.(mb2.^2 .- 1)
 			# reflect poles to be inside the unit circle.
 			out = findall(abs.(p) .> 1)
 			p[out] = 1 ./ p[out]
@@ -136,7 +107,7 @@ function synthesizeNTF0(order,OSR,opt,H_inf,f0)
 			end
 			if x>1e6
 				warn_Hinf()
-				ntf.p = zeros(order)
+				ntf.p = zeros(order_i)
 				break
 			end
 			if itn == itn_limit
@@ -146,6 +117,43 @@ function synthesizeNTF0(order,OSR,opt,H_inf,f0)
 	end
 	return ntf
 end
+
+function synthesizeNTF0(order::Int, OSR::Int, opt, H_inf::Float64, f0::Float64)
+	local z
+	order = Float64(order) #Type stability
+	dw = pi/OSR
+
+	if f0!=0		#Bandpass design-- halve the order temporarily.
+		order = order/2
+		dw = pi/(2*OSR)
+	end
+	order_i = array_round(order)
+
+	#Determine the zeros.
+	if length(opt)==1
+		if opt==0
+			z = zeros(order_i)
+		else
+			z = dw*ds_optzeros(order,opt)
+			if isempty(z)
+				throw_unreachable()
+				return;
+			end
+		end
+		if f0!=0		# Bandpass design-- shift and replicate the zeros.
+			order = order*2
+			z = z .+ 2π*f0
+			z = conj.(z)
+			z = vcat(z, -z)
+		end
+		z = exp.(j*z)
+	else
+		z = opt[:] * complex(1.0) #Ensure is Vector{Complex{Float64}}
+	end
+
+	return synthesizeNTF0_z(order, OSR, z, H_inf, f0)
+end
+
 
 """`ntf = synthesizeNTF(order=3,osr=64,opt=0,H_inf=1.5,f0=0)`
 Synthesize a noise transfer function for a delta-sigma modulator.
@@ -175,7 +183,7 @@ ntf is a zpk object containing the zeros and poles of the NTF. See zpk.m
  appropriate version of synthesizeNTF based on the availability
  of the 'fmincon' function from the Optimization Toolbox
 """
-function synthesizeNTF(;order::Int=3, osr::Int=64, opt=0, H_inf::Float64=1.5, f0::Float64=0.0)
+function synthesizeNTF(order::Int=3, osr::Int=64; opt=0, H_inf::Float64=1.5, f0::Float64=0.0)
 	if f0 > 0.5
 		throw(ErrorException("f0 must be less than 0.5."))
 	end
