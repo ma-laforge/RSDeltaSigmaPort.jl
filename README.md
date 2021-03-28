@@ -5,6 +5,7 @@
 
 
 # RSDeltaSigmaPort.jl: Port of Richard Schreier's Delta Sigma Toolbox&sup1;
+**Galleries:** [:art: Sample notebooks (w/outputs)][Gallery]
 
 &sup1;Richard Schreier (2021). Delta Sigma Toolbox (<https://www.mathworks.com/matlabcentral/fileexchange/19-delta-sigma-toolbox>), MATLAB Central File Exchange. Retrieved March 20, 2021.
 
