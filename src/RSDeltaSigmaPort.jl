@@ -8,6 +8,7 @@ module RSDeltaSigmaPort
 	-VERIFYME: is this the correct behaviour???
 =#
 
+import LinearAlgebra
 using Statistics: mean
 using LinearAlgebra: norm
 using Printf: @sprintf
@@ -41,9 +42,12 @@ include("power.jl")
 include("optimize.jl")
 include("transferfunctions.jl")
 include("synthesizeNTF.jl")
+#include("simulateDSM.jl")
 include("plotgen.jl")
 include("display.jl")
 
+export cplxpair, array_round
+export _zpk, _zpkdata
 export dbm, dbp, dbv, rms
 export evalTF, rmsGain
 export synthesizeNTF

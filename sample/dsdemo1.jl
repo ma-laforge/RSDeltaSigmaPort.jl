@@ -33,13 +33,20 @@ displaygui(plot)
 #==8th-order bandpass modulator
 ===============================================================================#
 println("\t\tNTF Synthesis-- 8th-Order Bandpass Modulator\n")
+order = 8
 OSR = 64
 f0 = 0.125 #fs/8
 
-NTF8bp_opt2 = synthesizeNTF(8, OSR, opt=2, f0=f0)
-plot = plotNTF(NTF8bp_opt2, OSR, color=:blue)
+NTF8bp_opt2 = synthesizeNTF(order, OSR, opt=2, f0=f0)
+function gainNTF(order, OSR, NTF)
+	G = _zpk(zeros(array_round(order/2)),NTF.p,1,1)
+	G.k = 1/abs(evalTF(G,exp(2π*j*f0)))
+	return G
+end
+G = gainNTF(order, OSR, NTF8bp_opt2)
+plot = plotNTF(NTF8bp_opt2, OSR, color=:blue, f0=f0, G=G)
 plot.title = "8th-Order Bandpass Modulator"
-saveimage(:png, "dsdemo1_o5_bp.png", plot, AR=2/1, width=900)
+saveimage(:png, "dsdemo1_o8_bp.png", plot, AR=2/1, width=900)
 displaygui(plot)
 
 :END_OF_DEMO

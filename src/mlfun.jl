@@ -41,4 +41,14 @@ function cplxpair(a)
 	return a
 end
 
+#TODO: Will algorithms work without collect (possibly faster?):
+eye(n::Int) = collect(LinearAlgebra.I(2))
+
+
+#It sounds like this should be implementation of orth:
+#orth(A) = LinearAlgebra.qr(A).Q
+
+#But scipy seems to do it this way:
+orth(A) = LinearAlgebra.svd(A).U
+
 #Last line
