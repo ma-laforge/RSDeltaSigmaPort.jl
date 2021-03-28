@@ -1,3 +1,7 @@
+<!-- Reference-style links to make tables & lists more readable -->
+[Gallery]: <https://github.com/ma-laforge/FileRepo/blob/master/RSDeltaSigmaPort/notebook>
+
+
 # RSDeltaSigmaPort: Sample notebooks
 
 ## :warning: Environment stack
@@ -9,4 +13,4 @@ Jupyter notebooks seems to have a built-in mechanism that recursively adds
 The notebooks in this folder should all be clear of data to avoid repository bloat.
 
 ## Notebooks that include outputs
-Notebooks that include outputs can be found [here]().
+Notebooks that include outputs can be found [here][Gallery].

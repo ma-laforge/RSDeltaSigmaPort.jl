@@ -1,5 +1,5 @@
 <!-- Reference-style links to make tables & lists more readable -->
-[Gallery]: <https://github.com/ma-laforge/FileRepo/tree/master/SignalProcessing/sampleplots/README.md>
+[Gallery]: <https://github.com/ma-laforge/FileRepo/blob/master/RSDeltaSigmaPort/notebook>
 [CMDimDataJL]: <https://github.com/ma-laforge/CMDimData.jl>
 [InspectDRJL]: <https://github.com/ma-laforge/InspectDR.jl>
 
@@ -16,6 +16,10 @@
 ## Table of contents
 
  1. [Description](#Description)
+ 1. Sample usage
+    1. [IJupyter notebooks (`notebook/`)](notebook/)
+    1. [IJupyter notebooks (with output) &#x21AA;][Gallery]
+    1. [Sample directory w/plain `.jl` files (`sample/`)](sample/)
  1. [Installation](#Installation)
  1. [Known limitations](#KnownLimitations)
 
