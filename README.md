@@ -8,7 +8,8 @@
 
 &sup1;Richard Schreier (2021). Delta Sigma Toolbox (<https://www.mathworks.com/matlabcentral/fileexchange/19-delta-sigma-toolbox>), MATLAB Central File Exchange. Retrieved March 20, 2021.
 
-[![Build Status](https://travis-ci.org/ma-laforge/RSDeltaSigmaPort.jl.svg?branch=master)](https://travis-ci.org/ma-laforge/RSDeltaSigmaPort.jl)
+[![Build Status](https://github.com/ma-laforge/RSDeltaSigmaPort.jl/workflows/CI/badge.svg)](https://github.com/ma-laforge/RSDeltaSigmaPort.jl/actions?query=workflow%3ACI)
+
 
 ***INITIAL STAGES OF PORT***: Sorry. Not yet ready for use.
 
