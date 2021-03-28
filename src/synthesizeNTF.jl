@@ -1,3 +1,6 @@
+#RSDeltaSigmaPort: Synthesize NTFs
+#-------------------------------------------------------------------------------
+
 function synthesizeNTF0_z(order::Float64, OSR::Int, z::Vector{Complex{Float64}}, H_inf::Float64, f0::Float64)
 	order_i = array_round(order)
 	Ts = 1.0

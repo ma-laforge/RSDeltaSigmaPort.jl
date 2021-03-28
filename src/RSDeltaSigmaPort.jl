@@ -1,3 +1,6 @@
+#RSDeltaSigmaPort: A port of Richard Schreier's Delta Sigma Toolbox 
+#-------------------------------------------------------------------------------
+
 module RSDeltaSigmaPort
 #__precompile__(false)
 #=Flags:
@@ -5,15 +8,16 @@ module RSDeltaSigmaPort
 	-VERIFYME: is this the correct behaviour???
 =#
 
-using Graphics: BoundingBox
 using Statistics: mean
 using LinearAlgebra: norm
 using Printf: @sprintf
 using CMDimData
 using CMDimData.MDDatasets
 using CMDimData.EasyPlot
+using CMDimData.EasyPlot: BoundingBox #Use this one to avoid version conflicts with Graphics.
+using InspectDR
+CMDimData.@includepkg EasyPlotInspect
 
-#using InspectDR
 #import ControlSystems
 #using ControlSystems: zpk, zpkdata
 
@@ -34,14 +38,16 @@ const j = im
 include("base.jl")
 include("mlfun.jl")
 include("power.jl")
-include("helperfunc.jl")
+include("optimize.jl")
 include("transferfunctions.jl")
 include("synthesizeNTF.jl")
 include("plotgen.jl")
+include("display.jl")
 
 export dbm, dbp, dbv, rms
 export evalTF, rmsGain
 export synthesizeNTF
 export plotPZ, plotPZ!, plotNTF, plotNTF!
+export inlinedisp, saveimage, displaygui
 
 end # module

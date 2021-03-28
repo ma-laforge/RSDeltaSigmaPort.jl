@@ -1,3 +1,10 @@
+#RSDeltaSigma: Base functionnality and types
+#-------------------------------------------------------------------------------
+
+#=Info
+  - Circumvent using ControlSystems.jl for now by specifying custom zpk()
+    functions & data structures.
+=#
 
 #Custom structure to store zpk data.
 mutable struct ZPKData

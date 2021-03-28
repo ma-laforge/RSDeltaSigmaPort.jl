@@ -1,4 +1,5 @@
-#Ml functions
+#RSDeltaSigmaPort: Implement missing core functionality
+#-------------------------------------------------------------------------------
 
 """Emulates rounding of array indices"""
 array_round(i) = round(Int, i) #VERIFYME

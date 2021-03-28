@@ -4,14 +4,13 @@ version = "0.1.0"
 
 [deps]
 CMDimData = "70385e83-f223-47f4-874b-539892411e49"
-Graphics = "a2bd30eb-e257-5431-a919-1863eab51364"
 InspectDR = "d0351b0e-4b05-5898-87b3-e2a8edfddd1d"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 
 [compat]
-CMDimData = "0.4.0"
+CMDimData = "0.4.1"
 InspectDR = "0.4.0"
 julia = "1.3"
 

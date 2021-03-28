@@ -1,4 +1,5 @@
-#Utilities for transfer functions
+#RSDeltaSigmaPort: utilities for transfer functions
+#-------------------------------------------------------------------------------
 
 """`y = evalRPoly(roots,x,k=1)`
 Compute the value of a polynomial which is given in terms of its roots.

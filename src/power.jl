@@ -1,3 +1,5 @@
+#RSDeltaSigmaPort: Compute power values.
+#-------------------------------------------------------------------------------
 
 """`dbm(v,R=50) = 10*log10(v^2/R*1000)`
 The equivalent in dBm of an rms voltage v

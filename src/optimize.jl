@@ -1,3 +1,5 @@
+#RSDeltaSigmaPort: Optimization functions
+#-------------------------------------------------------------------------------
 
 "values for optimal zeros when opt==1"
 const _VALUES_OPTZEROS_OPT1 = [ #Currently not type stable
