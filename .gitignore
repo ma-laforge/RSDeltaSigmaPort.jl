@@ -8,3 +8,6 @@ Manifest.toml
 *.eps
 *.svg
 *.pdf
+
+#Jupyter files
+.ipynb_checkpoints/
