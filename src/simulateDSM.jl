@@ -1,48 +1,17 @@
 #RSDeltaSigma: simulateDSM algorithm
 #-------------------------------------------------------------------------------
 
-"""`ds_quantize(y,n)`
-
-Quantize y to:
- - an odd integer in [-n+1, n-1], if n is even, or
- - an even integer in [-n, n], if n is odd.
-
-This definition gives the same step height for both mid-rise
-and mid-tread quantizers.
-"""
-function ds_quantize(y, n::Int)
-	if mod(n,2)==0 #mid-rise quantizer
-		v = 2*floor(0.5*y)+1
-	else #mid-tread quantizer
-		v = 2*floor(0.5*(y+1))
-	end
-
-	#Limit the output
-	for qi in 1:length(n) #Loop for multiple quantizers
-		L = n(qi)-1
-		i = v(qi,:)>L
-		if any(i)
-			v(qi,i) = L
-		end
-		i = v(qi,:)<-L
-		if any(i)
-			v(qi,i) = -L
-		end
-	end
-	return v
-end
-
 #Main algorithm for simulateDSM
 function _simulateDSM(u, nq, nlev, x0, order, A, B, C, D1, savestate::Bool, trackmax::Bool)
 	if isnan(x0)
 		x0 = zeros(order,1)
 	end
 
-	N = length(u);
-	v = zeros(nq,N);
-	y = zeros(nq,N);
+	N = length(u)
+	v = zeros(nq,N)
+	y = zeros(nq,N)
 
-	xn = nothing, xmax=nothing
+	xn = nothing; xmax = nothing
 	if savestate #Need to store the state information
 		xn = zeros(order,N)
 	end
@@ -51,11 +20,11 @@ function _simulateDSM(u, nq, nlev, x0, order, A, B, C, D1, savestate::Bool, trac
 	end
 
 	for i=1:N
-		y(:,i) = C*x0 + D1*u(:,i);
-		v(:,i) = ds_quantize(y(:,i),nlev);
-		x0 = A * x0 + B * [u(:,i);v(:,i)];
+		y[:,i] = C*x0 .+ D1 .* u[:,i]
+		v[:,i] = ds_quantize(y[:,i], nlev)
+		x0 = A * x0 + B * [u[:,i];v[:,i]]
 		if savestate #Save the next state
-			xn(:,i) = x0
+			xn[:,i] = x0
 		end
 		if trackmax #Keep track of the state maxima
 			xmax = max(abs(x0),xmax)
@@ -67,14 +36,16 @@ end
 
 
 function simulateDSM(u, ntf::ZPKData, nlev=2, x0=NaN, savestate::Bool=false, trackmax::Bool=false)
-	nq = length(nlev)
-	order = length(ntf.zeros)
+	u = conv2seriesmatrix2D(u)
+	nq = length(nlev) #Number of quantizers
+	order = length(ntf.z)
 
-	A, B2, C, D2 = zp2ss(ntf.poles,ntf.zeros,-1) #realization of 1/H
+	_ss = _zp2ss(ntf.p,ntf.z,-1) #realization of 1/H
+	A, B2, C, D2 = _ss.A, _ss.B, _ss.C, _ss.D
 	#Transform the realization so that C = [1 0 0 ...]
 	Sinv = orth([C' eye(order)])/norm(C); S = inv(Sinv)
 	C = C*Sinv
-	if C(1)<0
+	if C[1]<0
 		S = -S
 		Sinv = -Sinv
 	end
@@ -88,7 +59,8 @@ function simulateDSM(u, ntf::ZPKData, nlev=2, x0=NaN, savestate::Bool=false, tra
 	return _simulateDSM(u, nq, nlev, x0, order, A, B, C, D1, savestate, trackmax)
 end
 
-function simulateDSM(u, ABCD::Array, nlev=2, x0=NaN)
+function simulateDSM(u, ABCD::Array, nlev=2, x0=NaN, savestate::Bool=false, trackmax::Bool=false)
+	u = conv2seriesmatrix2D(u)
 	nu = size(u,1)
 	nq = length(nlev)
 	if !(size(ABCD,2) > 2 && size(ABCD,2)==nu+size(ABCD,1))
@@ -96,10 +68,10 @@ function simulateDSM(u, ABCD::Array, nlev=2, x0=NaN)
 		throw(ArgumentError(msg))
 	end
 	order = size(ABCD,1)-nq
-	A = ABCD(1:order, 1:order);
-	B = ABCD(1:order, order+1:order+nu+nq);
-	C = ABCD(order+1:order+nq, 1:order);
-	D1= ABCD(order+1:order+nq, order+1:order+nu);
+	A = ABCD(1:order, 1:order)
+	B = ABCD(1:order, order+1:order+nu+nq)
+	C = ABCD(order+1:order+nq, 1:order)
+	D1= ABCD(order+1:order+nq, order+1:order+nu)
 
 	return _simulateDSM(u, nq, nlev, x0, order, A, B, C, D1, savestate, trackmax)
 end

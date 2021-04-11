@@ -118,6 +118,9 @@ function synthesizeNTF0_z(order::Float64, OSR::Int, z::Vector{Complex{Float64}},
 			end
 		end
 	end
+
+	ntf.z = cleancplxpair(ntf.z)
+	ntf.p = cleancplxpair(ntf.p)
 	return ntf
 end
 

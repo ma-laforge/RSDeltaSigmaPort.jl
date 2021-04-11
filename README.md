@@ -11,8 +11,12 @@
 
 [![Build Status](https://github.com/ma-laforge/RSDeltaSigmaPort.jl/workflows/CI/badge.svg)](https://github.com/ma-laforge/RSDeltaSigmaPort.jl/actions?query=workflow%3ACI)
 
-
+### :warning: Progress report
 ***INITIAL STAGES OF PORT***: Sorry. Not yet ready for use.
+
+The following high-level functionnality has (at least partially) been ported:
+ - `evalTF`
+ - `synthesizeNTF`, `simulateDSM`
 
 ## Table of contents
 
@@ -21,6 +25,7 @@
     1. [IJupyter notebooks (`notebook/`)](notebook/)
     1. [IJupyter notebooks (with output) &#x21AA;][Gallery]
     1. [Sample directory w/plain `.jl` files (`sample/`)](sample/)
+ 1. [Plotting](#Plotting)
  1. [Installation](#Installation)
  1. [Known limitations](#KnownLimitations)
 
@@ -38,9 +43,15 @@ This module tries to remain true to the original Delta Sigma Toolbox while confo
  - Using keyword arguments when deemed appropriate.
  - ...
 
+<a name="Plotting"></a>
+## Plotting
+`RSDeltaSigmaPort.jl` uses [CMDimData.jl/EasyPlot][CMDimDataJL] to handle plotting.
+For examples on how to generate ***new/customized*** plots, see the built-in
+functions found in:
+ - [plotgen.jl](src/plotgen.jl).
+
 <a name="Installation"></a>
 ## Installation
-
 `RSDeltaSigmaPort.jl` is not yet registered with Julia's **General** registry.
 It can nonetheless be installed using the library's URL from Julia's built-in package manager:
 
@@ -54,11 +65,12 @@ pkg> add https://github.com/ma-laforge/RSDeltaSigmaPort.jl
 
 ### Compatibility
 
-Extensive compatibility testing of `RSDeltaSigmaPort.jl` has not been performed.  The module has been tested using the following environment(s):
+Extensive compatibility testing of `RSDeltaSigmaPort.jl` has not been performed.
+The module has been tested using the following environment(s):
 
 - Linux / Julia-1.5.3
 
 ## Disclaimer
 
- - ***INITIAL STAGES OF PORT***: Sorry. Not yet ready for use.
+ - :warning: ***INITIAL STAGES OF PORT***: Sorry. Not yet ready for use.
  - The `RSDeltaSigmaPort.jl` module is not yet mature.  Expect significant changes.

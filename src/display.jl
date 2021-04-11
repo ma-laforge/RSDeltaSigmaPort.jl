@@ -1,6 +1,8 @@
 #RSDeltaSigmaPort display facilities
 #-------------------------------------------------------------------------------
 
+const PlotOrColl = Union{EasyPlot.Plot, EasyPlot.PlotCollection}
+
 struct ImageRepr{T}
 	obj::T #Object to display as image
 	width::Float64 #Width of resultant image
@@ -15,6 +17,12 @@ width and aspect ratio.
 ImageRepr(obj; width=640, AR=1) = ImageRepr(obj, Float64(width), Float64(AR))
 
 
+#==helper functions
+===============================================================================#
+#Convert EasyPlot.Plot -> EasyPlot.PlotCollection
+_plt2coll(plot::EasyPlot.Plot) = push!(cons(:plot_collection), plot)
+
+
 #=="show" interface
 ===============================================================================#
 function _show(io::IO, mime::MIME, r::ImageRepr{EasyPlot.PlotCollection})
@@ -26,9 +34,13 @@ function _show(io::IO, mime::MIME, r::ImageRepr{EasyPlot.PlotCollection})
 	EasyPlot._show(io, mime, opt, nativeplot)
 	return nothing
 end
+function _show(io::IO, mime::MIME, r::ImageRepr{EasyPlot.Plot})
+	pcoll = _plt2coll(r.obj)
+	return _show(io, mime, ImageRepr(pcoll, width=r.width, AR=r.AR))
+end
 
 #Only publicly provide Base.show() for MIME"image/png":
-Base.show(io::IO, mime::MIME"image/png", r::ImageRepr{EasyPlot.PlotCollection}) = _show(io, mime, r)
+Base.show(io::IO, mime::MIME"image/png", r::ImageRepr{T}) where T<:PlotOrColl = _show(io, mime, r)
 
 function Base.show(io::IO, mime::MIME"text/plain", r::ImageRepr{EasyPlot.PlotCollection})
 	#Do not warn. Jupyter calls function even if it doesn't use the results.
@@ -37,7 +49,10 @@ function Base.show(io::IO, mime::MIME"text/plain", r::ImageRepr{EasyPlot.PlotCol
 	println(io, "[INLINE PLOT]: ", r.obj.title)
 	return nothing
 end
-
+function Base.show(io::IO, mime::MIME"text/plain", r::ImageRepr{EasyPlot.Plot})
+	println(io, "[INLINE PLOT]: ", r.obj.title)
+	return nothing
+end
 
 #=="showable" interface
 ===============================================================================#
@@ -58,7 +73,6 @@ Display plot as inline image.
 inlinedisp(plot; AR=1, scalew=1, maxw=900) =
 	display(ImageRepr(plot; AR=AR, width=maxw*scalew))
 
-
 _write(mime::Symbol, filepath::String, nativeplot; opt_kwargs...) =
 	_write(mime, filepath, ShowOptions(; opt_kwargs...), nativeplot)
 
@@ -72,13 +86,13 @@ Saves plot as an image.
  - `maxw`: Reference width of image (typ. max width of display).
  - `scalew`: Amount by which to scale image before rendering it (`imagew=maxw*scalew`)
 """
-function saveimage(mime::Symbol, filepath::String, pcoll::EasyPlot.PlotCollection; AR=1, width=900)
-	ir = ImageRepr(pcoll; AR=AR, width=width)
+function saveimage(mime::Symbol, filepath::String, plot::PlotOrColl; AR=1, width=900)
+	ir = ImageRepr(plot; AR=AR, width=width)
 	open(filepath, "w") do io
 		_show(io, EasyPlot._getmime(mime), ir)
 	end
 end
 
-displaygui(pcoll::EasyPlot.PlotCollection) = EasyPlot.displaygui(:InspectDR, pcoll)
+displaygui(plot::PlotOrColl) = EasyPlot.displaygui(:InspectDR, plot)
 
 #Last line

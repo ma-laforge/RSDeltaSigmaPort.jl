@@ -41,8 +41,43 @@ function cplxpair(a)
 	return a
 end
 
+#Custom function to ensure complex conjugate pairs match exactly.
+function cleancplxpair(l)
+	epstol = 100
+
+	if length(l) < 2
+		return l
+	end
+
+	l = cplxpair(l) #Sort to group complex conjugates together
+	result = similar(l)
+	if length(l)>0
+		#Copy last value in case not part of conjugate pair
+		#(ignored by following algorithm)
+		result[end] = l[end]
+	end
+
+	i = 1
+	while i < length(l)
+		a, b = l[i], l[i+1]
+		ΔRmin = epstol*eps(real(a))
+		ΔXmin = epstol*eps(imag(a))
+
+		result[i] = a
+		if abs(real(a) - real(b)) < ΔRmin && abs(imag(a) + imag(b)) < ΔXmin
+			a = (a+conj(b))/2 #Take mean & re-write
+			result[i] = a
+			result[i+1] = conj(a)
+			i+=1
+		end
+		i+=1
+	end
+
+	return result
+end
+
 #TODO: Will algorithms work without collect (possibly faster?):
-eye(n::Int) = collect(LinearAlgebra.I(2))
+eye(n::Int) = collect(LinearAlgebra.I(n))
 
 
 #It sounds like this should be implementation of orth:

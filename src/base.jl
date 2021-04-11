@@ -6,7 +6,13 @@
     functions & data structures.
 =#
 
-#Custom structure to store zpk data.
+
+#==Type definitions
+===============================================================================#
+"""`ZPKData`
+
+Custom structure to store zpk data.
+"""
 mutable struct ZPKData
 	z::Union{Float64, Vector{Float64}, Vector{Complex{Float64}}}
 	p::Union{Float64, Vector{Float64}, Vector{Complex{Float64}}}
@@ -20,5 +26,16 @@ end
 
 _zpkdata(d::ZPKData) = (d.z, d.p, dpk)
 
+
+#==Converters to make input data uniform
+===============================================================================#
+"""`conv2seriesmatrix2D(x)`
+
+Ensure we have a 2D matrix representing series data (Vector->2×N Array)
+"""
+conv2seriesmatrix2D(x::T) where T =
+	throw(ErrorException("Cannot convert $T to a \"series data matrix\""))
+conv2seriesmatrix2D(x::Vector) = collect(x')
+conv2seriesmatrix2D(x::Array) = x #Assume format is ok.
 
 #Last line

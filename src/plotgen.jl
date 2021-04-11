@@ -1,6 +1,88 @@
 #RSDeltaSigmaPort: Base plot generation tools
 #-------------------------------------------------------------------------------
 
+
+#==Useful constants
+===============================================================================#
+const linlin = cons(:a, xyaxes=set(xscale=:lin, yscale=:lin))
+const linlog = cons(:a, xyaxes=set(xscale=:lin, yscale=:log))
+const loglin = cons(:a, xyaxes=set(xscale=:log, yscale=:lin))
+const loglog = cons(:a, xyaxes=set(xscale=:log, yscale=:log))
+
+const dfltline = cons(:a, line=set(style=:solid, color=:blue, width=3))
+
+
+#==Waveform builders
+===============================================================================#
+
+#-------------------------------------------------------------------------------
+function _wfrm__(x::Vector, y::Vector, sweepid::String)
+	validatexy_vec(x, y)
+	return DataF1(x,y)
+end
+function _wfrm__(x::Array{Float64,2}, y::Array{Float64,2}, sweepid::String)
+	validatexy_1param(x, y)
+	N = size(x, 1)
+	wfrm = fill(DataRS{DataF1}, PSweep(sweepid, collect(1:N))) do i
+		return DataF1(x[i,:], y[i,:]) #Returns from implicit "do" function
+	end
+	return wfrm
+end
+
+"""`waveform(x, y; sweepid="i")`
+
+Create a waveform object with a given string to identify the sweep.
+"""
+waveform(x, y; sweepid::String="i") = _wfrm__(x, y, sweepid)
+
+#-------------------------------------------------------------------------------
+function _stairs__(x::Vector, y::Vector, sweepid::String)
+	validatexy_vec(x, y)
+	if length(x) < 1
+		throw("Does not support zero-length arrays")
+	end
+	xs = similar(x, 2*length(x))
+	ys = similar(y, 2*length(y))
+
+	ii = io = 1
+	while ii < length(x)
+		xs[io] = x[ii]
+		xs[io+1] = x[ii+1]
+		ii += 1; io +=2
+	end
+	if ii <= length(x) #last point
+		Δx = 1 #Step size (if x has a single point)
+		if length(x) > 1; Δx = x[end]-x[end-1]; end
+		xs[io] = x[ii]
+		xs[io+1] = x[ii]+Δx #Use final step size
+	end
+
+	ii = io = 1
+	while ii <= length(y)
+		_y = y[ii]
+		ys[io] = _y
+		ys[io+1] = _y
+		ii += 1; io +=2
+	end
+	return DataF1(xs, ys)
+end
+
+function _stairs__(x::Array{Float64,2}, y::Array{Float64,2}, sweepid::String)
+	validatexy_1param(x, y)
+	N = size(x, 1)
+	wfrm = fill(DataRS{DataF1}, PSweep(sweepid, collect(1:N))) do i
+		return _stairs__(x[i,:], y[i,:], "") #Returns from implicit "do" function
+	end
+	return wfrm
+end
+
+"""`wfrm_stairs(x, y; sweepid="i")`
+
+Create a staircase-waveform object with a given string to identify the sweep.
+"""
+wfrm_stairs(x, y; sweepid::String="i") = _stairs__(x, y, sweepid)
+
+
 #==Misc. draw functions
 ===============================================================================#
 function plot_unitcircle!(plot; color=:black, width=2, nseg::Int=360)
@@ -11,6 +93,41 @@ function plot_unitcircle!(plot; color=:black, width=2, nseg::Int=360)
 		cons(:wfrm, circle, line=set(style=:solid, color=color, width=width))
 	)
 	return plot
+end
+
+
+#==Frequency-spectrum plots
+===============================================================================#
+function plotSpec()
+	plot = cons(:plot, linlin, title = "Output Spectrum", legend=true,
+		xyaxes=set(xmin=0, xmax=0.5, ymin=-120, ymax=0),
+		labels=set(xaxis="Normalized Frequency", yaxis="dBFS"),
+	)
+	return plot
+end
+
+function plotSpec!(plot, sig; id::String="signal", color=:blue)
+	sig = RSDeltaSigmaPort.conv2seriesmatrix2D(sig)
+	M, N = size(sig)
+	Nspec = div(N,2)+1 #Only need half the spectrum
+	𝑓 = range(0, stop=0.5, length=Nspec)
+	𝑓 = ones(M)*𝑓' #2D frequency matrix for downstream algorithms
+	spec = fft(sig)/(N/4)
+	spec = spec[:,1:Nspec]
+	specdB = dbv.(spec)
+
+	#Convert to waveforms:
+	specdB = waveform(𝑓, specdB)
+
+	push!(plot,
+		cons(:wfrm, specdB, line=set(style=:solid, color=color, width=3), label=id),
+	)
+	return plot
+end
+
+function plotSpec(sig; id::String="signal", color=:blue)
+	plot = plotSpec()
+	return plotSpec!(plot, sig, id=id, color=color)
 end
 
 
@@ -186,5 +303,61 @@ end
 plotNTF(NTF::ZPKData, args...; f0=0, kwargs...) =
 	plotNTF!(plotNTF(f0!=0), NTF::ZPKData, args...; f0=f0, kwargs...)
 
+
+#==Time domain plots of modulator
+===============================================================================#
+function plotModTransient(inputSig, outputSig, otherSig...)
+	plot = cons(:plot, linlin, title = "Modulator Input & Output", legend=true,
+		xyaxes=set(xmin=0, xmax=300, ymin=-1.2, ymax=1.2),
+		labels=set(xaxis="Sample Number", yaxis="Amplitude [V]"),
+	)
+
+	#Ensure we have 2D-Array{}s, not Vector{}s:
+	inputSig = conv2seriesmatrix2D(inputSig)
+	outputSig = conv2seriesmatrix2D(outputSig)
+
+	#Generate matrix of sample numbers:
+	M = size(inputSig,1) #Number of rows (ex: quantizers)
+	N = size(inputSig,2) #Number of samples
+	n = 1:N
+	sn = ones(Float64, M)*n' #Matrix of "sample number" (Use Float64s for downstream functions)
+
+	inputSig = wfrm_stairs(sn, inputSig)
+	outputSig = wfrm_stairs(sn, outputSig)
+
+	push!(plot,
+		cons(:wfrm, inputSig, line=set(style=:solid, color=:red, width=3), label="input"),
+		cons(:wfrm, outputSig, line=set(style=:solid, color=:blue, width=3), label="output"),
+#		cons(:wfrm, otherSig, line=set(style=:solid, color=:black, width=3), label="y"),
+	)
+
+	pcoll = push!(cons(:plot_collection), plot)
+end
+
+#==Modulator output spectrum
+===============================================================================#
+function plotModSpectrum(sig, NTF, fB::Int, nsig::Int;
+		title::String="Modulator Output Spectrum", id::String="simulation"
+	)
+	sig = RSDeltaSigmaPort.conv2seriesmatrix2D(sig)
+
+	M, N = size(sig)
+	if M!=1
+		throw("FIXME: replicate hann window rows for M>0")
+	end
+	swnd = sig .* ds_hann(N)' #windowed (1xN array)
+	spec = fft(swnd)/(N/4)
+	snr = calculateSNR(spec[3:fB+1],nsig)
+
+	plot = plotSpec(swnd, id=id, color=:blue)
+	plot.title = title
+
+	snr_str = @sprintf("SNR = %5.0fdB", snr) #orig. coords: (0.05,-10)
+	push!(plot, 
+		cons(:atext, snr_str, y=-90, reloffset=set(x=0.5), align=:cc),
+	)
+
+	return plot
+end
 
 #Last line
