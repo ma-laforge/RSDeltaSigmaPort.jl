@@ -42,7 +42,7 @@ function peakSNR(snr, amp)
 	amp = amp[i]; snr = snr[i]
 
 	i = [true]
-	local m = 0
+	local m = 0.0
 	while any(i) && n > 3
 		#Draw a 45-degree median line through the data
 		tmp = sort(snr .- amp)
@@ -95,7 +95,7 @@ the test frequency.
 
 Future versions may accommodate STFs.
 """
-function predictSNR(ntf, R=64, amp=vcat(-120:10:-20, -15, -10:0), f0=0)
+function predictSNR(ntf, R=64, amp=vcat(-120:10:-20, -15, -10:0); f0::Float64=0.0)
 	Nb = 100
 	XTAB = range(-2, stop=0, length=21)
 	#The following code was used to create the YTAB matrix
@@ -145,9 +145,10 @@ function predictSNR(ntf, R=64, amp=vcat(-120:10:-20, -15, -10:0), f0=0)
 
 	Nimp = 100
 	unstable = false
+	f_prev = 0.0; fprime = 0.0
+	m0 = 0.0; rho = 0.0; erfinvu = 0.0
 	for n=1:N
 		#Calculate sigma_e2
-		local erfinvu = 0
 		if f0==0
 			erfinvu = erfinv(u[n])
 			sigma_e2[n] = 1 - u[n]^2 - 2/pi*exp(-2*erfinvu^2)
@@ -158,9 +159,9 @@ function predictSNR(ntf, R=64, amp=vcat(-120:10:-20, -15, -10:0), f0=0)
 			K = 0.5 * sqrt(pi) * u[n]
 			if n==1
 				rho = u[n]^2 #Initial guess; otherwise use previous value.
-				fprime = 1
+				fprime = 1.0
 			end
-			drho = 1
+			drho = 1.0
 			for itn = 1:20
 				m0 = interp1_cubic(XTAB,YTAB[:,2],-rho^2)
 				f = rho*m0 - K
@@ -186,7 +187,7 @@ function predictSNR(ntf, R=64, amp=vcat(-120:10:-20, -15, -10:0), f0=0)
 		k1_prev = 0
 		itn = 0
 		k1sigma1 = (f0==0) ? sqrt(2/pi)*exp(-erfinvu^2) : sqrt(2/pi)*m1
-		local sigma_1 = 0
+		local sigma_1 = 0.0
 		while abs(k1[n]-k1_prev) > 1e-6*(1+k1[n]) && itn < 100
 			#Create the function: H_hat = L1/(1-k1*L1)=(H-1)/(H*(1-k1)+k1).
 			den1 = (1-k1[n])*num + den*k1[n]
@@ -222,21 +223,25 @@ function predictSNR(ntf, R=64, amp=vcat(-120:10:-20, -15, -10:0), f0=0)
 	return (snr, amp, k0, k1, sigma_e2)
 end
 
-"""`(snr,amp) = simulateSNR(ntf|ABCD|function,osr,amp,f0=0,nlev=2,f=1/(4*osr),k=13,quadrature=false)`
+"""`(snr,amp) = simulateSNR(ΔΣmodel,osr,amp; f0=0,nlev=2,f=1/(4*osr),k=13,quadrature=false)`
 
 Determine the SNR for a delta-sigma modulator by using simulations.
-The modulator is described by a noise transfer function (ntf)
-and the number of quantizer levels (nlev).
-Alternatively, the first argument to simulateSNR may be an ABCD matrix or 
-the name of a function taking the input signal as its sole argument.
-The band of interest is defined by the oversampling ratio (osr)
-and the center frequency (f0).
+
+`ΔΣmodel` describes the modulator by a noise transfer function (ntf) and the
+number of quantizer levels (`nlev`). Alternatively, `ΔΣmodel` may be a
+function taking the input signal as its sole argument:
+ - `ΔΣmodel::ZPKData`: z, p, k transfer function
+ - `ΔΣmodel::Array` ABCD matrix
+ - `ΔΣmodel::Function` funΔΣ(u) generating ΔΣ output.
+
+The band of interest is defined by the oversampling ratio (`osr`)
+and the center frequency (`f0`).
 The input signal is characterized by the `amp` vector and the `f` variable.
 
  - `amp` defaults to [-120 -110...-20 -15 -10 -9 -8 ... 0]dB, where 0 dB means
    a full-scale (peak value = nlev-1) sine wave.
- - f is the input frequency, normalized such that 1 -> fs;
- - f is rounded to an FFT bin.
+ - `f` is the input frequency, normalized such that 1 -> fs;
+ - `f` is rounded to an FFT bin.
 
 Using sine waves located in FFT bins, the SNR is calculated as the ratio
 of the sine wave power to the power in all in-band bins other than those
@@ -249,8 +254,8 @@ is not allowed to lie in bins 0 or 1. The length of the FFT is 2^k.
 
 Future versions may accommodate STFs.
 """
-function simulateSNR(arg1, osr::Int=64, amp=vcat(-120:10:-20, -15, -10:0),
-	f0=0, nlev::Int=2, f=NaN, k::Int=13, quadrature=false
+function simulateSNR(arg1, osr::Int=64, amp=vcat(-120:10:-20, -15, -10:0);
+	f0::Float64=0.0, nlev::Int=2, f::Float64=NaN, k::Int=13, quadrature::Bool=false
 )
 	is_function = isa(arg1, Function)
 
@@ -324,7 +329,8 @@ function simulateSNR(arg1, osr::Int=64, amp=vcat(-120:10:-20, -15, -10:0),
 		F = F-2
 	else
 		f1 = round(Int, N*(f0-1/(osr_mult*osr)))
-		inBandBins = div(N,2) .+ (f1:round(Int, N*(f0+1/(osr_mult*osr)))) #Should exclude DC
+		f2 = round(Int, N*(f0+1/(osr_mult*osr)))
+		inBandBins = div(N,2) .+ (f1:f2) #Should exclude DC
 		F = F-f1+1
 	end
 

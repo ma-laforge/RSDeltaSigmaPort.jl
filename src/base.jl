@@ -9,6 +9,8 @@
 
 #==Type definitions
 ===============================================================================#
+const IndexRange = UnitRange{Int64}
+
 """`ZPKData`
 
 Custom structure to store zpk data.

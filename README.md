@@ -16,7 +16,9 @@
 
 The following high-level functionnality has (at least partially) been ported:
  - `evalTF`
- - `synthesizeNTF`, `simulateDSM`
+ - `calculateSNR`, `peakSNR`, `predictSNR`
+ - `synthesizeNTF`
+ - `simulateSNR`, `simulateDSM`
 
 ## Table of contents
 
@@ -70,7 +72,10 @@ The module has been tested using the following environment(s):
 
 - Linux / Julia-1.6.0
 
-## Disclaimer
+## :warning: Disclaimer
 
- - :warning: ***INITIAL STAGES OF PORT***: Sorry. Not yet ready for use.
+ - ***INITIAL STAGES OF PORT***: Sorry. Not yet ready for use.
+ - Jupyter [notebooks](notebook/) might be slightly broken/out of date. If so,
+   see their counterparts in the [`sample/`](sample/) directory for a more
+   regularly maintained example.
  - The `RSDeltaSigmaPort.jl` module is not yet mature.  Expect significant changes.

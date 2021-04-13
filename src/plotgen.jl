@@ -326,8 +326,8 @@ function plotModTransient(inputSig, outputSig, otherSig...)
 	outputSig = wfrm_stairs(sn, outputSig)
 
 	push!(plot,
-		cons(:wfrm, inputSig, line=set(style=:solid, color=:red, width=3), label="input"),
 		cons(:wfrm, outputSig, line=set(style=:solid, color=:blue, width=3), label="output"),
+		cons(:wfrm, inputSig, line=set(style=:solid, color=:red, width=3), label="input"),
 #		cons(:wfrm, otherSig, line=set(style=:solid, color=:black, width=3), label="y"),
 	)
 
@@ -336,7 +336,7 @@ end
 
 #==Modulator output spectrum
 ===============================================================================#
-function plotModSpectrum(sig, NTF, fB::Int, nsig::Int;
+function plotModSpectrum(sig, NTF, iband::IndexRange, nsig::Int;
 		title::String="Modulator Output Spectrum", id::String="simulation"
 	)
 	sig = conv2seriesmatrix2D(sig)
@@ -349,7 +349,7 @@ function plotModSpectrum(sig, NTF, fB::Int, nsig::Int;
 	#Compute windowed signal spectrum & SNR
 	swnd = sig .* ds_hann(N)' #windowed (1xN array)
 	spec = fft(swnd)/(N/4)
-	snr = calculateSNR(spec[3:fB+1],nsig) #Must integrate from entire spectrum.
+	snr = calculateSNR(spec[iband],nsig) #Must integrate from entire spectrum.
 
 	#Compute expected PSD
 	NBW = 1.5/N
@@ -378,14 +378,14 @@ end
 
 #==SNR plot
 ===============================================================================#
-function plotSNR(sig, NTF, OSR::Int;
+function plotSNR(sig, NTF, OSR::Int; f0::Float64=0.0,
 		title::String="SNR: Theory vs Simulation", id::String="simulation"
 	)
 	sig = conv2seriesmatrix2D(sig)
 	M, N = size(sig)
 
-	snr, amp = simulateSNR(NTF,OSR)
-	snr_pred, amp_pred = predictSNR(NTF, OSR)
+	snr, amp = simulateSNR(NTF, OSR, f0=f0)
+	snr_pred, amp_pred = predictSNR(NTF, OSR, f0=f0)
 	amp_pred = conv2seriesmatrix2D(amp_pred*1.0) #Ensure amplitudes are Float64
 	pk_snr, pk_amp = peakSNR(snr, amp) #Single values
 
@@ -402,8 +402,8 @@ function plotSNR(sig, NTF, OSR::Int;
 
 	snr_str = @sprintf("peak SNR = %4.1fdB\n@ OSR = %d", pk_snr, OSR) #orig. coords: (-25, 85)
 	push!(plot, 
-		cons(:wfrm, snr_pred, line=set(style=:solid, color=:red, width=3), label="theory"),
 		cons(:wfrm, snr, simglyph, line=set(style=:dashdot, color=:green, width=3), label="simulation"),
+		cons(:wfrm, snr_pred, line=set(style=:solid, color=:red, width=3), label="theory"),
 		cons(:atext, snr_str, x=-25, y=85, align=:cr),
 	)
 	return plot
