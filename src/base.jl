@@ -24,7 +24,7 @@ function _zpk(z, p, k::Number, Ts::Number)
 	ZPKData(z, p, k, Ts)
 end
 
-_zpkdata(d::ZPKData) = (d.z, d.p, dpk)
+_zpkdata(d::ZPKData) = (d.z, d.p, d.k)
 
 
 #==Converters to make input data uniform

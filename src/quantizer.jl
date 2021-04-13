@@ -5,7 +5,7 @@
 #Version from simulateDSM.m
 #-------------------------------------------------------------------------------
 #VERIFYME: Did this one actually get called? Was the other version the one being called??
-"""`ds_quantize(y,n)`
+"""`ds_quantize_DSM(y,n)`
 
 Quantize y to:
  - an odd integer in [-n+1, n-1], if n is even, or
@@ -14,7 +14,7 @@ Quantize y to:
 This definition gives the same step height for both mid-rise
 and mid-tread quantizers.
 """
-function ds_quantize(y, n::Int)
+function ds_quantize_DSM(y, n::Int)
 	if mod(n,2)==0 #mid-rise quantizer
 		v = 2*floor.(0.5*y) .+ 1
 	else #mid-tread quantizer
@@ -36,7 +36,7 @@ function ds_quantize(y, n::Int)
 	return v
 end
 #Pretty sure mod(n,2) code needs to be adapted for Vector:
-ds_quantize(y, n::Vector{Int}) =
+ds_quantize_DSM(y, n::Vector{Int}) =
 	throw(ErrorException("ds_quantizer: does not support n::Vector"))
 
 

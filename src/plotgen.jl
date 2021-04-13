@@ -107,7 +107,7 @@ function plotSpec()
 end
 
 function plotSpec!(plot, sig; id::String="signal", color=:blue)
-	sig = RSDeltaSigmaPort.conv2seriesmatrix2D(sig)
+	sig = conv2seriesmatrix2D(sig)
 	M, N = size(sig)
 	Nspec = div(N,2)+1 #Only need half the spectrum
 	𝑓 = range(0, stop=0.5, length=Nspec)
@@ -339,24 +339,73 @@ end
 function plotModSpectrum(sig, NTF, fB::Int, nsig::Int;
 		title::String="Modulator Output Spectrum", id::String="simulation"
 	)
-	sig = RSDeltaSigmaPort.conv2seriesmatrix2D(sig)
+	sig = conv2seriesmatrix2D(sig)
 
 	M, N = size(sig)
 	if M!=1
 		throw("FIXME: replicate hann window rows for M>0")
 	end
+
+	#Compute windowed signal spectrum & SNR
 	swnd = sig .* ds_hann(N)' #windowed (1xN array)
 	spec = fft(swnd)/(N/4)
-	snr = calculateSNR(spec[3:fB+1],nsig)
+	snr = calculateSNR(spec[3:fB+1],nsig) #Must integrate from entire spectrum.
+
+	#Compute expected PSD
+	NBW = 1.5/N
+	Nspec = div(N,2)+1 #Only need half the spectrum for display purposes
+	𝑓 = collect(range(0, stop=0.5, length=Nspec))
+	Sqq = 4 * evalTF(NTF,exp.(2j*pi*𝑓)).^2 / 3
+	psde = dbp.(Sqq*NBW)
+
+	#Convert to waveforms:
+	psde = waveform(𝑓, psde)
 
 	plot = plotSpec(swnd, id=id, color=:blue)
 	plot.title = title
 
 	snr_str = @sprintf("SNR = %5.0fdB", snr) #orig. coords: (0.05,-10)
+	nbw_str = @sprintf("NBW = %4.1E × 𝑓s", NBW) #orig. coords: (0.5, -90)
+	ann_str = string(snr_str, "\n", nbw_str)
 	push!(plot, 
-		cons(:atext, snr_str, y=-90, reloffset=set(x=0.5), align=:cc),
+		cons(:wfrm, psde, line=set(style=:solid, color=:red, width=3), label="Expected PSD"),
+		cons(:atext, ann_str, y=-90, reloffset=set(x=0.5), align=:cc),
 	)
 
+	return plot
+end
+
+
+#==SNR plot
+===============================================================================#
+function plotSNR(sig, NTF, OSR::Int;
+		title::String="SNR: Theory vs Simulation", id::String="simulation"
+	)
+	sig = conv2seriesmatrix2D(sig)
+	M, N = size(sig)
+
+	snr, amp = simulateSNR(NTF,OSR)
+	snr_pred, amp_pred = predictSNR(NTF, OSR)
+	amp_pred = conv2seriesmatrix2D(amp_pred*1.0) #Ensure amplitudes are Float64
+	pk_snr, pk_amp = peakSNR(snr, amp) #Single values
+
+	#Convert to waveforms:
+	snr = waveform(amp, snr)
+	snr_pred = waveform(amp_pred, snr_pred)
+
+	simglyph = cons(:a, glyph=set(shape=:o, size=1, color=:green, fillcolor=:green))
+
+	plot = cons(:plot, linlin, title = title, legend=true,
+		xyaxes=set(xmin=-100, xmax=0, ymin=0, ymax=100),
+		labels=set(xaxis="Input Level (dBFS)", yaxis="SQNR (dB)"),
+	)
+
+	snr_str = @sprintf("peak SNR = %4.1fdB\n@ OSR = %d", pk_snr, OSR) #orig. coords: (-25, 85)
+	push!(plot, 
+		cons(:wfrm, snr_pred, line=set(style=:solid, color=:red, width=3), label="theory"),
+		cons(:wfrm, snr, simglyph, line=set(style=:dashdot, color=:green, width=3), label="simulation"),
+		cons(:atext, snr_str, x=-25, y=85, align=:cr),
+	)
 	return plot
 end
 

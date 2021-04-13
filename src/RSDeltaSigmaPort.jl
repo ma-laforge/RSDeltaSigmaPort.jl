@@ -16,12 +16,15 @@ module RSDeltaSigmaPort
 	-VERIFYME: is this the correct behaviour???
 =#
 
+import Statistics: mean
 import LinearAlgebra
-import FFTW
-using Statistics: mean
-using LinearAlgebra: norm
-using FFTW: fft
-using Printf: @sprintf
+import LinearAlgebra: norm
+import SpecialFunctions: erfinv
+import Interpolations
+import FFTW: fft, fftshift
+import DSP: conv
+#import Polynomials #roots, Polynomial
+import Printf: @sprintf
 using CMDimData
 using CMDimData.MDDatasets
 using CMDimData.EasyPlot
@@ -30,7 +33,6 @@ using InspectDR
 CMDimData.@includepkg EasyPlotInspect
 
 import ControlSystems
-import ControlSystems.Polynomials #roots, Polynomial
 #using ControlSystems: zpk, zpkdata
 
 "Availability of `fmincon` function from the Optimization Toolbox"
@@ -48,6 +50,7 @@ end
 
 const j = im
 include("base.jl")
+include("math.jl")
 include("mlfun.jl")
 include("mlfun_control.jl")
 include("datasets.jl")
@@ -68,10 +71,12 @@ export _zpk, _zpkdata
 
 #Simple calculations:
 export dbm, dbp, dbv, rms
-export calculateSNR
+export mapQtoR
+export calculateSNR, peakSNR
 
 #Advanced algorithms:
-export fft #From FFTW
+#export fft #From FFTW #Don't export; high risk of collision
+export predictSNR
 
 #Transfer functions & windowing:
 export evalTF, rmsGain
@@ -79,13 +84,13 @@ export synthesizeNTF
 export ds_hann
 
 #Simulations:
-export simulateDSM
+export simulateSNR, simulateDSM
 
 #Plotting:
 export wfrm_stairs, waveform
 export plotSpec, plotSpec!
 export plotPZ, plotPZ!, plotNTF, plotNTF!
-export plotModTransient, plotModSpectrum
+export plotModTransient, plotModSpectrum, plotSNR
 export inlinedisp, saveimage, displaygui
 
 end # module

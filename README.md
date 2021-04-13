@@ -68,7 +68,7 @@ pkg> add https://github.com/ma-laforge/RSDeltaSigmaPort.jl
 Extensive compatibility testing of `RSDeltaSigmaPort.jl` has not been performed.
 The module has been tested using the following environment(s):
 
-- Linux / Julia-1.5.3
+- Linux / Julia-1.6.0
 
 ## Disclaimer
 

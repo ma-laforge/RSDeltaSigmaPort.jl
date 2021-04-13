@@ -86,4 +86,27 @@ eye(n::Int) = collect(LinearAlgebra.I(n))
 #But scipy seems to do it this way:
 orth(A) = LinearAlgebra.svd(A).U
 
+#Convert array of roots into polynomial:
+function poly(rA)
+	result = [1]
+	for r in rA
+		result = conv(result, [1, r])
+	end
+	return result
+end
+
+#Implement interp1 using linear interpolation:
+function interp1_lin(xA, yA, xv)
+	ILib = Interpolations
+	itp = ILib.interpolate((x,), y, ILib.Gridded(ILib.Linear()))
+		return itp(xv)
+end
+
+#Implement interp1 using cubic interpolation:
+function interp1_cubic(xA, yA, xv)
+	ILib = Interpolations
+   itp = ILib.interpolate(yA, ILib.BSpline(ILib.Cubic(ILib.Natural())), ILib.OnGrid())
+		intf = ILib.scale(itp, xA)
+	return intf(xv)
+end
 #Last line

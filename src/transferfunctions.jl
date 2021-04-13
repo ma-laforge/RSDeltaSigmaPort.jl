@@ -59,5 +59,34 @@ function rmsGain(H,f1,f2,N::Int=100)
 	return g
 end
 
+"""`(pGain, Nimp) = powerGain(num,den,Nimp0=100)`
+
+Calculate the power gain of a TF given in coefficient form.
+
+ - `Nimp` is the recommended number of impulse response samples for use
+   in future calls and `Nimp0` is the suggested number to use.
+"""
+function powerGain(num, den, Nimp0::Int=100)
+	Nimp = Nimp0
+	unstable = false
+
+	sys = _tf(num,den,1)
+	imp = _impulse(sys, Nimp)
+	if sum(abs.(imp[Nimp-10:Nimp])) < 1e-8 && Nimp > 50 #Use fewer samples.
+		Nimp = round(Int, Nimp/1.3)
+	else
+		while sum(abs.(imp[Nimp-10:Nimp])) > 1e-6
+			Nimp = Nimp*2
+			imp = _impulse(sys, Nimp)
+			if sum(abs.(imp[Nimp-10:Nimp])) >= 50 || Nimp >= 1e4
+				#H is close to being unstable
+				unstable = true
+				break
+			end
+		end
+	end
+	pGain = unstable ? Inf : sum(imp .^ 2)
+	return (pGain, Nimp)
+end
 
 #Last line

@@ -1,6 +1,9 @@
 #RSDeltaSigma: simulateDSM algorithm
 #-------------------------------------------------------------------------------
 
+
+#==simulateDSM
+===============================================================================#
 #Main algorithm for simulateDSM
 function _simulateDSM(u, nq, nlev, x0, order, A, B, C, D1, savestate::Bool, trackmax::Bool)
 	if isnan(x0)
@@ -21,7 +24,7 @@ function _simulateDSM(u, nq, nlev, x0, order, A, B, C, D1, savestate::Bool, trac
 
 	for i=1:N
 		y[:,i] = C*x0 .+ D1 .* u[:,i]
-		v[:,i] = ds_quantize(y[:,i], nlev)
+		v[:,i] = ds_quantize_DSM(y[:,i], nlev)
 		x0 = A * x0 + B * [u[:,i];v[:,i]]
 		if savestate #Save the next state
 			xn[:,i] = x0
@@ -93,5 +96,10 @@ zp2ss.m.
 """ simulateDSM
 
 @warn("Implements .m version of simulateDSM. C code might be more efficient.")
+
+
+#==simulateQDSM
+===============================================================================#
+simulateQDSM(args...; kwargs...) = throw("simulateQDSM() not implemented")
 
 #Last line

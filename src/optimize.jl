@@ -48,7 +48,7 @@ function ds_optzeros(n, opt=1)
 	local optZeros
 
 	if opt==0
-		optZeros = zeros(ceil(norig/2));
+		optZeros = zeros(ceil(Int, norig/2))
 	elseif n > length(_VALUES_OPTZEROS_OPT1)
 		throw(ErrorException("Optimized zeros for n>14 are not available."))
 	elseif opt==1
