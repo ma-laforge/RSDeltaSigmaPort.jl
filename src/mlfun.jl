@@ -4,7 +4,8 @@
 """Emulates rounding of array indices"""
 array_round(i) = round(Int, i) #VERIFYME
 
-function cplxpair(a)
+#Sort complex poles
+function _cplxpair(a)
 	epstol = 100
 
 	#Sorts real first, then imaginary:
@@ -39,6 +40,24 @@ function cplxpair(a)
 		
 	end
 	return a
+end
+
+"""`cplxpair(a)`
+
+Sort roots in array a such that complex pairs are in ascending order of their
+real parts, then by their imaginary part.  In the output, the real roots
+re-positionned after the complex roots.
+"""
+function cplxpair(a)
+	epstol = 100
+
+	#Index of real roots:
+	Δmin = epstol*eps.(abs.(a)) #Threshold for numerical error
+	ireal = abs.(imag.(a)) .< Δmin
+
+	areal = real.(a[ireal]) #Clean up real roots
+	acplx = a[.!ireal] #complex pairs
+	return vcat(_cplxpair(acplx), sort(areal)) #Sort roots
 end
 
 #Custom function to ensure complex conjugate pairs match exactly.

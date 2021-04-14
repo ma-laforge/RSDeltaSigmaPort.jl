@@ -12,7 +12,7 @@
 [![Build Status](https://github.com/ma-laforge/RSDeltaSigmaPort.jl/workflows/CI/badge.svg)](https://github.com/ma-laforge/RSDeltaSigmaPort.jl/actions?query=workflow%3ACI)
 
 ### :warning: Progress report
-***INITIAL STAGES OF PORT***: Sorry. Not yet ready for use.
+***INITIAL STAGES OF PORT***: A limited portion of the Delta Sigma toolbox has been ported.
 
 The following high-level functionnality has (at least partially) been ported:
  - `evalTF`
@@ -74,7 +74,7 @@ The module has been tested using the following environment(s):
 
 ## :warning: Disclaimer
 
- - ***INITIAL STAGES OF PORT***: Sorry. Not yet ready for use.
+ - ***INITIAL STAGES OF PORT***: A limited portion of the Delta Sigma toolbox has been ported.
  - Jupyter [notebooks](notebook/) might be slightly broken/out of date. If so,
    see their counterparts in the [`sample/`](sample/) directory for a more
    regularly maintained example.

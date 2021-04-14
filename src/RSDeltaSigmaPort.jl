@@ -90,7 +90,8 @@ export simulateSNR, simulateDSM
 export wfrm_stairs, waveform
 export plotSpec, plotSpec!
 export plotPZ, plotPZ!, plotNTF, plotNTF!
-export plotModTransient, plotModSpectrum, plotSNR
+export plotModTransient, plotModSpectrum, plotModSpectrum!
+export plotSNR, plotSNR!
 export inlinedisp, saveimage, displaygui
 
 end # module

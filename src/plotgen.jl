@@ -9,7 +9,7 @@ const linlog = cons(:a, xyaxes=set(xscale=:lin, yscale=:log))
 const loglin = cons(:a, xyaxes=set(xscale=:log, yscale=:lin))
 const loglog = cons(:a, xyaxes=set(xscale=:log, yscale=:log))
 
-const dfltline = cons(:a, line=set(style=:solid, color=:blue, width=3))
+const dfltline = cons(:a, line=set(style=:solid, color=:blue, width=2))
 
 
 #==Waveform builders
@@ -106,28 +106,27 @@ function plotSpec()
 	return plot
 end
 
-function plotSpec!(plot, sig; id::String="signal", color=:blue)
+function plotSpec!(plot, sig; id::String="signal", color=:blue, sp2p::Float64=1.0)
 	sig = conv2seriesmatrix2D(sig)
 	M, N = size(sig)
 	Nspec = div(N,2)+1 #Only need half the spectrum
 	𝑓 = range(0, stop=0.5, length=Nspec)
 	𝑓 = ones(M)*𝑓' #2D frequency matrix for downstream algorithms
-	spec = fft(sig)/(N/4)
-	spec = spec[:,1:Nspec]
-	specdB = dbv.(spec)
+	spec = fft(sig)/(sp2p*N/4)
+	specdB = dbv.(spec[:,1:Nspec])
 
 	#Convert to waveforms:
 	specdB = waveform(𝑓, specdB)
 
 	push!(plot,
-		cons(:wfrm, specdB, line=set(style=:solid, color=color, width=3), label=id),
+		cons(:wfrm, specdB, line=set(style=:solid, color=color, width=2), label=id),
 	)
 	return plot
 end
 
-function plotSpec(sig; id::String="signal", color=:blue)
+function plotSpec(sig; id::String="signal", color=:blue, sp2p::Float64=1.0)
 	plot = plotSpec()
-	return plotSpec!(plot, sig, id=id, color=color)
+	return plotSpec!(plot, sig, id=id, color=color, sp2p=sp2p)
 end
 
 
@@ -247,9 +246,9 @@ function plotNTF(isbandpass)
 	return pcoll
 end
 
-function plotNTF!(pcoll, NTF::ZPKData, OSR::Int; color=:blue, f0::Real=0, G=nothing)
-	dfltline = cons(:a, line=set(style=:solid, color=color, width=3))
-	gainline = cons(:a, line=set(style=:solid, color=:red, width=3))
+function plotNTF!(pcoll, NTF::ZPKData, OSR::Int; color=:blue, f0::Real=0, STF=nothing)
+	dfltline = cons(:a, line=set(style=:solid, color=color, width=2))
+	gainline = cons(:a, line=set(style=:solid, color=:red, width=2))
 	markerline = cons(:a, line=set(style=:dash, width=2.5))
 	plot_PZ, plot_NTFlin, plot_NTFzoom = pcoll.plotlist
 	isbandpass = f0!=0
@@ -268,11 +267,11 @@ function plotNTF!(pcoll, NTF::ZPKData, OSR::Int; color=:blue, f0::Real=0, G=noth
 	push!(plot_NTFlin, 
 		cons(:wfrm, DataF1(𝑓, magNTF), dfltline, label="|NTF|")
 	)
-	if G != nothing
+	if STF != nothing
 		plot_NTFlin.title = "NTF/STF Magnitude Response"
-		magG = dbv(evalTF(G,z))
+		magSTF = dbv(evalTF(STF,z))
 		push!(plot_NTFlin, 
-			cons(:wfrm, DataF1(𝑓, magG), gainline, label="|G|")
+			cons(:wfrm, DataF1(𝑓, magSTF), gainline, label="|STF|")
 		)
 	end
 
@@ -306,9 +305,8 @@ plotNTF(NTF::ZPKData, args...; f0=0, kwargs...) =
 
 #==Time domain plots of modulator
 ===============================================================================#
-function plotModTransient(inputSig, outputSig, otherSig...)
-	plot = cons(:plot, linlin, title = "Modulator Input & Output", legend=true,
-		xyaxes=set(xmin=0, xmax=300, ymin=-1.2, ymax=1.2),
+function plotModTransient(inputSig, outputSig, otherSig...; legend::Bool=true, color=:blue)
+	plot = cons(:plot, linlin, title = "Modulator Input & Output", legend=legend,
 		labels=set(xaxis="Sample Number", yaxis="Amplitude [V]"),
 	)
 
@@ -326,18 +324,23 @@ function plotModTransient(inputSig, outputSig, otherSig...)
 	outputSig = wfrm_stairs(sn, outputSig)
 
 	push!(plot,
-		cons(:wfrm, outputSig, line=set(style=:solid, color=:blue, width=3), label="output"),
-		cons(:wfrm, inputSig, line=set(style=:solid, color=:red, width=3), label="input"),
-#		cons(:wfrm, otherSig, line=set(style=:solid, color=:black, width=3), label="y"),
+		cons(:wfrm, outputSig, line=set(style=:solid, color=color, width=2), label="output"),
+		cons(:wfrm, inputSig, line=set(style=:solid, color=:red, width=2), label="input"),
+#		cons(:wfrm, otherSig, line=set(style=:solid, color=:black, width=2), label="y"),
 	)
-
-	pcoll = push!(cons(:plot_collection), plot)
+	return plot
 end
 
 #==Modulator output spectrum
 ===============================================================================#
-function plotModSpectrum(sig, NTF, iband::IndexRange, nsig::Int;
-		title::String="Modulator Output Spectrum", id::String="simulation"
+function plotModSpectrum(;title::String="Modulator Output Spectrum")
+	plot = plotSpec()
+	plot.title = title
+	return plot
+end
+
+function plotModSpectrum!(plot, sig, NTF, iband::IndexRange, f::Int; sp2p::Float64=1.0,
+		id::String="simulation", color=:blue
 	)
 	sig = conv2seriesmatrix2D(sig)
 
@@ -348,64 +351,103 @@ function plotModSpectrum(sig, NTF, iband::IndexRange, nsig::Int;
 
 	#Compute windowed signal spectrum & SNR
 	swnd = sig .* ds_hann(N)' #windowed (1xN array)
-	spec = fft(swnd)/(N/4)
-	snr = calculateSNR(spec[iband],nsig) #Must integrate from entire spectrum.
+	spec = fft(swnd)/(sp2p*N/4)
+	snr = calculateSNR(spec[iband], f) #Must integrate from entire spectrum.
 
 	#Compute expected PSD
 	NBW = 1.5/N
 	Nspec = div(N,2)+1 #Only need half the spectrum for display purposes
 	𝑓 = collect(range(0, stop=0.5, length=Nspec))
-	Sqq = 4 * evalTF(NTF,exp.(2j*pi*𝑓)).^2 / 3
+	Sqq = 4 * evalTF(NTF,exp.(2j*pi*𝑓)).^2 / (3*sp2p^2)
 	psde = dbp.(Sqq*NBW)
 
 	#Convert to waveforms:
 	psde = waveform(𝑓, psde)
 
-	plot = plotSpec(swnd, id=id, color=:blue)
-	plot.title = title
+	plot = plotSpec!(plot, swnd, id=id, color=color, sp2p=sp2p)
 
-	snr_str = @sprintf("SNR = %5.0fdB", snr) #orig. coords: (0.05,-10)
+	snr_str = @sprintf("SNR = %4.1fdB", snr) #orig. coords: (0.05,-10)
 	nbw_str = @sprintf("NBW = %4.1E × 𝑓s", NBW) #orig. coords: (0.5, -90)
 	ann_str = string(snr_str, "\n", nbw_str)
 	push!(plot, 
-		cons(:wfrm, psde, line=set(style=:solid, color=:red, width=3), label="Expected PSD"),
+		cons(:wfrm, psde, line=set(style=:solid, color=:red, width=2), label="Expected PSD"),
 		cons(:atext, ann_str, y=-90, reloffset=set(x=0.5), align=:cc),
 	)
 
 	return plot
 end
 
+"""`plotModSpectrum(sig, NTF, iband, f; sp2p=1.0, title, id)`
+
+Generate plot of modulator output spectrum:
+ - sig: Time domain ΔΣ signal.
+ - NTF:
+ - f: Bin location of input signal.
+ - sp2p: Peak-to-peak amplitude (V) of input signal.
+"""
+function plotModSpectrum(sig, NTF, iband::IndexRange, f::Int; sp2p::Float64=1.0,
+		title::String="Modulator Output Spectrum", id::String="simulation", color=:blue
+	)
+	plot = plotModSpectrum(title=title)
+	plotModSpectrum!(plot, sig, NTF, iband, f, sp2p=sp2p, id=id, color=color)
+	return plot
+end
+
 
 #==SNR plot
 ===============================================================================#
-function plotSNR(sig, NTF, OSR::Int; f0::Float64=0.0,
-		title::String="SNR: Theory vs Simulation", id::String="simulation"
+function plotSNR(; legend::Bool=true,
+		title::String="SNR: Theory vs Simulation"
+	)
+
+	plot = cons(:plot, linlin, title=title, legend=legend,
+		#xyaxes=set(xmin=-100, xmax=0, ymin=0, ymax=100),
+		xyaxes=set(ymax=100), #Clip infinite gains
+		labels=set(xaxis="Input Level (dBFS)", yaxis="SQNR (dB)"),
+	)
+
+	return plot
+end
+
+function plotSNR!(plot, sig, NTF, OSR::Int; f0::Float64=0.0, nlev::Int=2,
+		id::String="simulation", color=:green
 	)
 	sig = conv2seriesmatrix2D(sig)
 	M, N = size(sig)
 
-	snr, amp = simulateSNR(NTF, OSR, f0=f0)
-	snr_pred, amp_pred = predictSNR(NTF, OSR, f0=f0)
-	amp_pred = conv2seriesmatrix2D(amp_pred*1.0) #Ensure amplitudes are Float64
+	snr, amp = simulateSNR(NTF, OSR, f0=f0, nlev=nlev)
 	pk_snr, pk_amp = peakSNR(snr, amp) #Single values
+
+	snr_pred, amp_pred = nothing, nothing
+	if nlev == 2 #predictSNR() only supports 2 levels
+		snr_pred, amp_pred = predictSNR(NTF, OSR, f0=f0)
+		amp_pred = conv2seriesmatrix2D(amp_pred*1.0) #Ensure amplitudes are Float64
+	end
 
 	#Convert to waveforms:
 	snr = waveform(amp, snr)
-	snr_pred = waveform(amp_pred, snr_pred)
 
-	simglyph = cons(:a, glyph=set(shape=:o, size=1, color=:green, fillcolor=:green))
-
-	plot = cons(:plot, linlin, title = title, legend=true,
-		xyaxes=set(xmin=-100, xmax=0, ymin=0, ymax=100),
-		labels=set(xaxis="Input Level (dBFS)", yaxis="SQNR (dB)"),
-	)
+	simglyph = cons(:a, glyph=set(shape=:o, size=1, color=color, fillcolor=color))
 
 	snr_str = @sprintf("peak SNR = %4.1fdB\n@ OSR = %d", pk_snr, OSR) #orig. coords: (-25, 85)
 	push!(plot, 
-		cons(:wfrm, snr, simglyph, line=set(style=:dashdot, color=:green, width=3), label="simulation"),
-		cons(:wfrm, snr_pred, line=set(style=:solid, color=:red, width=3), label="theory"),
+		cons(:wfrm, snr, simglyph, line=set(style=:dashdot, color=color, width=2), label="simulation"),
 		cons(:atext, snr_str, x=-25, y=85, align=:cr),
 	)
+	if !isnothing(snr_pred)
+		snr_pred = waveform(amp_pred, snr_pred) #Convert to waveform
+		push!(plot,
+			cons(:wfrm, snr_pred, line=set(style=:solid, color=:red, width=2), label="theory"),
+		)
+	end
+	return plot
+end
+
+function plotSNR(sig, NTF, OSR::Int; f0::Float64=0.0, nlev::Int=2, legend::Bool=true,
+		title::String="SNR: Theory vs Simulation", id::String="simulation", color=:green
+	)
+	plot = plotSNR(legend=legend, title=title)
+	plotSNR!(plot, sig, NTF, OSR, f0=f0, nlev=nlev, id=id, color=color)
 	return plot
 end
 
