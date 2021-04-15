@@ -16,9 +16,13 @@
 
 The following high-level functionnality has (at least partially) been ported:
  - `evalTF`
+ - `synthesizeNTF`, `realizeNTF`
+ - `stuffABCD`, `scaleABCD`, `mapABCD`
  - `calculateSNR`, `peakSNR`, `predictSNR`
- - `synthesizeNTF`
  - `simulateSNR`, `simulateDSM`
+
+And demos:
+ - `dsdemo1`, `dsdemo2`, `dsdemo3`
 
 ## Table of contents
 
@@ -37,7 +41,7 @@ The following high-level functionnality has (at least partially) been ported:
 As its name suggests, `RSDeltaSigmaPort.jl` is a Julia port of Richard Schreier's Delta Sigma Toolbox.
 
 ### Module name
-Note that this module is not named `DeltaSigma.jl`, thus allowing someone else to appropriate the name later on. The intent is to eventually have an "official" `DeltaSigma.jl` module that is better integrated with Julia's ecosystem than this simple port.
+Note that this module is not named something like `DeltaSigmaModulators.jl`, thus allowing someone else to appropriate the package name later on. Hopefully, `RSDeltaSigmaPort` will eventually be superseded by a more generically named package that is better integrated with Julia's ecosystem than this simple port.
 
 ### Design decisions
 This module tries to remain true to the original Delta Sigma Toolbox while conforming to some Julia patterns, including:

@@ -16,9 +16,10 @@ module RSDeltaSigmaPort
 	-VERIFYME: is this the correct behaviour???
 =#
 
+import Random
 import Statistics: mean
 import LinearAlgebra
-import LinearAlgebra: norm
+import LinearAlgebra: norm, diagm
 import SpecialFunctions: erfinv
 import Interpolations
 import FFTW: fft, fftshift
@@ -58,10 +59,12 @@ include("power.jl")
 include("snr.jl")
 include("optimize.jl")
 include("transferfunctions.jl")
+include("statespace.jl")
 include("windowing.jl")
 include("synthesizeNTF.jl")
 include("quantizer.jl")
 include("simulateDSM.jl")
+include("realizeTF.jl")
 include("plotgen.jl")
 include("display.jl")
 
@@ -80,8 +83,11 @@ export predictSNR
 
 #Transfer functions & windowing:
 export evalTF, rmsGain
-export synthesizeNTF
+export synthesizeNTF, realizeNTF
 export ds_hann
+
+#State space:
+export stuffABCD, scaleABCD, mapABCD
 
 #Simulations:
 export simulateSNR, simulateDSM
@@ -92,6 +98,7 @@ export plotSpec, plotSpec!
 export plotPZ, plotPZ!, plotNTF, plotNTF!
 export plotModTransient, plotModSpectrum, plotModSpectrum!
 export plotSNR, plotSNR!
+export plotStateMaxima
 export inlinedisp, saveimage, displaygui
 
 end # module

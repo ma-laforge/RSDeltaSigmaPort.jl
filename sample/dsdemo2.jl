@@ -100,7 +100,7 @@ id_list = [@sprintf("H(∞)=%.1f", Hinf) for Hinf in Hinf_list]
 fB = ceil(Int, N/(2*OSR)); ftest = floor(Int, 2/7*fB)
 u = 0.5*M*sin.(2π*ftest/N * (0:N-1)) #half-scale sine-wave input
 NTF = [synthesizeNTF(7, OSR, opt=1, H_inf=Hinf) for Hinf in Hinf_list]
-v = [simulateDSM(u, H, M+1)[1] for H in NTF] #simulateDSM(..)[1] is mod output, v.
+v = [simulateDSM(u, H, nlev=M+1)[1] for H in NTF] #simulateDSM(..)[1] is mod output, v.
 println("\tdone.")
 
 @info("Plotting input/output characteristics of ΔΣ simulations")
