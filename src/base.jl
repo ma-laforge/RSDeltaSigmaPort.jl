@@ -32,6 +32,41 @@ end
 
 _zpkdata(d::ZPKData) = (d.z, d.p, d.k)
 
+abstract type AbstractDSM; end
+struct RealDSM <: AbstractDSM
+	order::Int
+	osr::Int
+	M::Int #Num steps
+	f0::Float64
+	form::Symbol
+	Hinf::Float64
+	opt::Bool
+end
+RealDSM(;order=3, osr=16, M=8, f0=0, form=:CRFB, Hinf=2, opt=true) =
+	RealDSM(order, osr, M, f0, form, Hinf, opt)
+
+struct QuadratureDSM <: AbstractDSM
+	order::Int
+	osr::Int
+	M::Int #Num steps
+	f0::Float64
+	form::Symbol
+	NG::Int
+	ING::Int
+end
+QuadratureDSM(;order=4, osr=32, M=8, f0=1/16, form=:PFB, NG=-50, ING=-10) =
+	QuadratureDSM(order, osr, M, f0, form, NG, ING)
+
+
+#==Accessors
+===============================================================================#
+
+
+#==Detectors
+===============================================================================#
+isquadrature(::RealDSM) = false
+isquadrature(::QuadratureDSM) = true
+
 
 #==Helper functions
 ===============================================================================#
@@ -66,7 +101,6 @@ Ensure we have a 2D matrix representing series data (Vector->2×N Array)
 conv2seriesmatrix2D(x::T) where T =
 	throw(ErrorException("Cannot convert $T to a \"series data matrix\""))
 conv2seriesmatrix2D(x::AbstractVector) = collect(x')
-conv2seriesmatrix2D(x::Vector) = collect(x') #Otherwise Array traps it.
-conv2seriesmatrix2D(x::Array) = x #Assume format is ok.
+conv2seriesmatrix2D(x::Array{T, 2}) where T<:Number = x #Assume format is ok.
 
 #Last line
