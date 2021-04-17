@@ -54,6 +54,7 @@ include("base.jl")
 include("math.jl")
 include("mlfun.jl")
 include("mlfun_control.jl")
+include("text.jl")
 include("datasets.jl")
 include("power.jl")
 include("snr.jl")
@@ -65,15 +66,23 @@ include("synthesizeNTF.jl")
 include("quantizer.jl")
 include("simulateDSM.jl")
 include("realizeTF.jl")
-include("plotgen.jl")
+include("plot_base.jl")
+include("plot_transient.jl")
+include("plot_spectrum.jl")
+include("plot_NTF.jl")
+include("plot_zplane.jl")
+include("plot_SNR.jl")
+include("plot_state.jl")
 include("display.jl")
 
 #Data:
 export cplxpair, array_round
 export _zpk, _zpkdata
+export RealDSM, QuadratureDSM #AbstractDSM?
 
 #Simple calculations:
 export dbm, dbp, dbv, rms
+export undbm, undbp, undbv
 export mapQtoR
 export calculateSNR, peakSNR
 
@@ -97,8 +106,13 @@ export wfrm_stairs, waveform
 export plotSpec, plotSpec!
 export plotPZ, plotPZ!, plotNTF, plotNTF!
 export plotModTransient, plotModSpectrum, plotModSpectrum!
+export plotExampleSpectrum
 export plotSNR, plotSNR!
+export documentNTF
 export plotStateMaxima
 export inlinedisp, saveimage, displaygui
+
+#Display/text:
+export ds_orderString
 
 end # module
