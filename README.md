@@ -68,6 +68,8 @@ pkg> add https://github.com/ma-laforge/RSDeltaSigmaPort.jl
 
 <a name="KnownLimitations"></a>
 ## Known limitations
+Functions that are not supported:
+ - `printmif()`
 
 ### Compatibility
 
