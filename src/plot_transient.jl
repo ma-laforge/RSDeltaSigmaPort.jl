@@ -53,30 +53,38 @@ wfrm_stairs(x, y; sweepid::String="i") = _stairs__(x, y, sweepid)
 
 #==Time domain plots of modulator
 ===============================================================================#
-function plotModTransient(inputSig, outputSig, otherSig...; legend::Bool=true, color=:blue)
+function plotModTransient(; legend::Bool=true)
 	plot = cons(:plot, linlin, title = "Modulator Input & Output", legend=legend,
 		labels=set(xaxis="Sample Number", yaxis="Amplitude [V]"),
 	)
+	return plot
+end
 
-	#Ensure we have 2D-Array{}s, not Vector{}s:
-	inputSig = conv2seriesmatrix2D(inputSig)
-	outputSig = conv2seriesmatrix2D(outputSig)
+function plotModTransient!(plot, sig; color=:blue, label::String="")
+	#Ensure we have a 2D-`Array`, not a `Vector`:
+	sig = conv2seriesmatrix2D(sig)
 
 	#Generate matrix of sample numbers:
-	M = size(inputSig,1) #Number of rows (ex: quantizers)
-	N = size(inputSig,2) #Number of samples
+	M = size(sig,1) #Number of rows (ex: quantizers)
+	N = size(sig,2) #Number of samples
 	n = 1:N
 	sn = ones(Float64, M)*n' #Matrix of "sample number" (Use Float64s for downstream functions)
 
-	inputSig = wfrm_stairs(sn, inputSig)
-	outputSig = wfrm_stairs(sn, outputSig)
+	#Generate staircase waveform of signal:
+	sig = wfrm_stairs(sn, sig)
 
 	push!(plot,
-		cons(:wfrm, outputSig, line=set(style=:solid, color=color, width=2), label="output"),
-		cons(:wfrm, inputSig, line=set(style=:solid, color=:red, width=2), label="input"),
-#		cons(:wfrm, otherSig, line=set(style=:solid, color=:black, width=2), label="y"),
+		cons(:wfrm, sig, line=set(style=:solid, color=color, width=2), label=label),
 	)
 	return plot
 end
+
+function plotModTransient(inputSig, outputSig; legend::Bool=true, color=:blue)
+	plot = plotModTransient(legend=legend)
+	plotModTransient!(plot, outputSig, color=color, label="output")
+	plotModTransient!(plot, inputSig, color=:red, label="input")
+	return plot
+end
+
 
 #Last line

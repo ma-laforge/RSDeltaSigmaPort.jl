@@ -18,4 +18,13 @@ function ds_orderString(n::Int, capitalize::Bool=false)
 	return s
 end
 
+
+function str_modulatortype(dsm::AbstractDSM)
+	typestr = (0==dsm.f0) ? "Lowpass" : "Bandpass"
+	if isquadrature(dsm)
+		typestr = "Quadrature " * typestr
+	end
+	return ds_orderString(dsm.order, true) * "-Order " * typestr
+end
+
 #Last line

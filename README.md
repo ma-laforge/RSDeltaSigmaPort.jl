@@ -19,10 +19,10 @@ The following high-level functionnality has (at least partially) been ported:
  - `synthesizeNTF`, `realizeNTF`
  - `stuffABCD`, `scaleABCD`, `mapABCD`
  - `calculateSNR`, `peakSNR`, `predictSNR`
- - `simulateSNR`, `simulateDSM`
+ - `simulateDSM`, `simulateSNR`
 
 And demos:
- - `dsdemo1`, `dsdemo2`, `dsdemo3`
+ - `dsdemo1`, `dsdemo2`, `dsdemo3` `dsexample1`
 
 ## Table of contents
 
@@ -45,16 +45,18 @@ Note that this module is not named something like `DeltaSigmaModulators.jl`, thu
 
 ### Design decisions
 This module tries to remain true to the original Delta Sigma Toolbox while conforming to some Julia patterns, including:
+ - Multiple dispatch (make function calls simpler to write).
  - ***Not*** writing each function definition in its own, separate file.
  - Using keyword arguments when deemed appropriate.
+ - Returning `NamedTuple`s instead of simple arrays when multiple values are returned.
  - ...
 
 <a name="Plotting"></a>
 ## Plotting
 `RSDeltaSigmaPort.jl` uses [CMDimData.jl/EasyPlot][CMDimDataJL] to handle plotting.
 For examples on how to generate ***new/customized*** plots, see the built-in
-functions found in:
- - [plotgen.jl](src/plotgen.jl).
+functions found in `plot_*.jl` files in the source directory:
+ - [`src/`](src/)
 
 <a name="Installation"></a>
 ## Installation

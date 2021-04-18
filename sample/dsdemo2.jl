@@ -11,33 +11,35 @@ j=im
 println("\n*** 5th order, 2-level, baseband modulator")
 OSR = 32
 N = 8192
+dsm = RealDSM(order=5, OSR=OSR, opt=1)
 
 @info("Performing ΔΣ simulation..."); flush(stdout); flush(stderr)
 #-------------------------------------------------------------------------------
-fB = ceil(Int, N/(2*OSR)); ftest=floor(Int, 2/3*fB)
-u = 0.5*sin.(2π*ftest/N * (0:N-1)) # half-scale sine-wave input
-NTF = synthesizeNTF(5, OSR, opt=1)
-v,xn,xmax,y = simulateDSM(u, NTF)
+ftest = dsm.f0 + 1/(3*OSR); fband = default_fband(dsm)
+fband[1] += 2/N #Ignore first 2 low-frequency points
+(u, iftest) = genTestTone(dsm, dbv(0.5), ftest, N=N)
+NTF = synthesizeNTF(dsm)
+simresult = simulateDSM(u, NTF)
 println("\tdone.")
 
 @info("Plotting modulator signals")
 #-------------------------------------------------------------------------------
-plot = plotModTransient(u, v, y)
+plot = plotModTransient(u, simresult.v)
 	set(plot, xyaxes=set(xmin=0, xmax=300, ymin=-1.2, ymax=1.2))
 saveimage(:png, "dsdemo2_o5_sig.png", plot, AR=2/1, width=900)
 displaygui(plot)
 
 @info("Plotting output spectrum (simulated vs theory)")
 #-------------------------------------------------------------------------------
-plot = plotModSpectrum(v, NTF, 3:fB+1, ftest-2,
-	title="Modulator Output Spectrum @ OSR = $OSR."
-)
+specinfo = calcSpecInfo(simresult.v, NTF, fband, ftest)
+plot = plotModSpectrum(specinfo)
+	plot.title="Modulator Output Spectrum @ OSR = $OSR."
 saveimage(:png, "dsdemo2_o5_spec.png", plot, AR=2/1, width=900)
 displaygui(plot)
 
 @info("Plotting SNR vs input power")
 #-------------------------------------------------------------------------------
-plot = plotSNR(v, NTF, OSR,
+plot = plotSNR(simresult.v, NTF, OSR,
 	title="SNR curve- theory and simulation"
 )
 saveimage(:png, "dsdemo2_o5_snr.png", plot, AR=2/1, width=900)
@@ -50,35 +52,35 @@ println("\n*** 8th order, 2-level, bandpass modulator")
 OSR=64
 f0 = 1/8
 N = 8192
+dsm = RealDSM(order=8, OSR=OSR, f0=f0, opt=1)
+display(dsm)
 
 @info("Performing ΔΣ simulation..."); flush(stdout); flush(stderr)
 #-------------------------------------------------------------------------------
-fB = ceil(Int, N/(2*OSR)); ftest=round(Int, f0*N + 1/3*fB)
-u = 0.5*sin.(2π*ftest/N * (0:N-1)) #half-scale sine-wave input
-NTF = synthesizeNTF(8, OSR, opt=1, f0=f0)
-v,xn,xmax,y = simulateDSM(u, NTF)
+ftest = dsm.f0 + 1/(6*OSR); fband = default_fband(dsm)
+(u, iftest) = genTestTone(dsm, dbv(0.5), ftest, N=N) #Half-scale sine-wave input
+NTF = synthesizeNTF(dsm)
+simresult = simulateDSM(u, NTF)
 println("\tdone.")
 
 @info("Plotting modulator signals")
 #-------------------------------------------------------------------------------
-plot = plotModTransient(u, v, y)
+plot = plotModTransient(u, simresult.v)
 	set(plot, xyaxes=set(xmin=0, xmax=300, ymin=-1.2, ymax=1.2))
 saveimage(:png, "dsdemo2_bp_o5_sig.png", plot, AR=2/1, width=900)
 displaygui(plot)
 
 @info("Plotting output spectrum (simulated vs theory)")
 #-------------------------------------------------------------------------------
-f1 = round(Int, (f0-0.25/OSR)*N)
-f2 = round(Int, (f0+0.25/OSR)*N)
-plot = plotModSpectrum(v, NTF, f1:f2, ftest-f1+1,
-	title="Modulator Output Spectrum @ OSR = $OSR."
-)
+specinfo = calcSpecInfo(simresult.v, NTF, fband, ftest)
+plot = plotModSpectrum(specinfo)
+	plot.title="Modulator Output Spectrum @ OSR = $OSR."
 saveimage(:png, "dsdemo2_bp_o5_spec.png", plot, AR=2/1, width=900)
 displaygui(plot)
 
 @info("Plotting SNR vs input power")
 #-------------------------------------------------------------------------------
-plot = plotSNR(v, NTF, OSR, f0=f0,
+plot = plotSNR(simresult.v, NTF, OSR, f0=f0,
 	title="SNR curve- theory and simulation"
 )
 saveimage(:png, "dsdemo2_bp_o5_snr.png", plot, AR=2/1, width=900)
@@ -89,18 +91,20 @@ displaygui(plot)
 ===============================================================================#
 println("\n*** 7th order, 15-step, baseband modulator")
 OSR = 8
-M = 16
+M = 16 #Shouldn'nt this be 15 (nlev=16?)
 N = 8192
 Hinf_list = [2.0, 8.0]
+dsm_list = [RealDSM(order=7, OSR=OSR, M=M, opt=1, Hinf=Hinf) for Hinf in Hinf_list]
 color_list = [:blue, :green]
 
 @info("Performing ΔΣ simulation for H(∞)=$(Hinf_list)..."); flush(stdout); flush(stderr)
 #-------------------------------------------------------------------------------
 id_list = [@sprintf("H(∞)=%.1f", Hinf) for Hinf in Hinf_list]
-fB = ceil(Int, N/(2*OSR)); ftest = floor(Int, 2/7*fB)
-u = 0.5*M*sin.(2π*ftest/N * (0:N-1)) #half-scale sine-wave input
-NTF = [synthesizeNTF(7, OSR, opt=1, H_inf=Hinf) for Hinf in Hinf_list]
-v = [simulateDSM(u, H, nlev=M+1)[1] for H in NTF] #simulateDSM(..)[1] is mod output, v.
+ftest = 1/(7*OSR); fband = default_fband(OSR)
+fband[1] += 2/N #Ignore first 2 low-frequency points
+(u, iftest) = genTestTone(dsm, dbv(0.5*M), ftest, N=N) #Half-scale sine-wave input
+NTF_list = [synthesizeNTF(dsm) for dsm in dsm_list]
+v_list = [simulateDSM(u, NTF, nlev=M+1).v for NTF in NTF_list] #simulateDSM(..).v is mod output, v.
 println("\tdone.")
 
 @info("Plotting input/output characteristics of ΔΣ simulations")
@@ -108,15 +112,15 @@ println("\tdone.")
 ioplotc = cons(:plot_collection, title="15-step / 7th-order / H(∞)=$(Hinf_list)")
 
 #Plot input & output transients:
-for i in keys(v) #Each simulated output
-	local plot = plotModTransient(u, v[i], color=color_list[i], legend=false)
+for (v, c) in zip(v_list, color_list) #Each simulated output
+	local plot = plotModTransient(u, v, color=c, legend=false)
 		set(plot, xyaxes=set(xmin=0, xmax=100, ymin=-16, ymax=16))
 	push!(ioplotc, plot)
 end
 
 #Append SNR vs input curves:
-plot = plotSNR(v, NTF[1], OSR, nlev=M+1, color=color_list[1], legend=false, title="SQNR")
-plotSNR!(plot, v, NTF[2], OSR, nlev=M+1, color=color_list[2])
+plot = plotSNR(v_list[1], NTF_list[1], OSR, nlev=M+1, color=color_list[1], legend=false, title="SQNR")
+plotSNR!(plot, v_list[2], NTF_list[2], OSR, nlev=M+1, color=color_list[2])
 	set(plot, xyaxes=set(xmin=-100, xmax=0, ymin=0, ymax=120))
 push!(ioplotc, plot)
 
@@ -131,12 +135,12 @@ displaygui(ioplotc)
 
 @info("Plotting output spectrum (simulated vs theory)")
 #-------------------------------------------------------------------------------
-plot = plotModSpectrum(title="Modulator Output Spectrum @ OSR = $OSR.")
+plot = plotModSpectrum()
+	plot.title="Modulator Output Spectrum @ OSR = $OSR."
 	set(plot, xyaxes=set(ymin=-160))
-for i in keys(NTF)
-	plotModSpectrum!(plot, v[i], NTF[i], 3:fB+1, ftest-2, sp2p=1.0*M,
-		id=id_list[i], color=color_list[i]
-	)
+for i in keys(NTF_list)
+	local specinfo = calcSpecInfo(v_list[i], NTF_list[i], fband, ftest, M=M)
+	plotModSpectrum!(plot, specinfo, id=id_list[i], color=color_list[i])
 end
 saveimage(:png, "dsdemo2_o7_15s_spec.png", plot, AR=2/1, width=900)
 displaygui(plot)

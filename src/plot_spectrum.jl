@@ -1,46 +1,25 @@
 #RSDeltaSigmaPort: Generate frequency spectrum plots
 #-------------------------------------------------------------------------------
 
-#==Helper functions
-===============================================================================#
-"""`(f1, f2) = ds_f1f2(OSR=64; f0=0, iscomplex=0)`
-"""
-function ds_f1f2(OSR::Int; f0::Float64=0, iscomplex=false)
-	local f1, f2
-	if iscomplex
-		f1 = f0-0.5/OSR
-		f2 = f0+0.5/OSR
-	else
-		if f0>0.25/OSR
-			f1 = f0-0.25/OSR
-			f2 = f0+0.25/OSR
-		else
-			f1 = 0
-			f2 = 0.5/OSR
-		end
-	end
-	return (f1, f2)
-end
-
 
 #==Frequency-spectrum plots
 ===============================================================================#
 function plotSpec()
-	plot = cons(:plot, linlin, title = "Output Spectrum", legend=true,
+	plot = cons(:plot, linlin, title = "Signal Spectrum", legend=true,
 		xyaxes=set(xmin=0, xmax=0.5, ymin=-120, ymax=0),
 		labels=set(xaxis="Normalized Frequency", yaxis="dBFS"),
 	)
 	return plot
 end
 
-function plotSpec!(plot, sig; id::String="signal", color=:blue, sp2p::Float64=1.0)
+function plotSpec!(plot, sig; M::Int=1, id::String="signal", color=:blue)
 	sig = conv2seriesmatrix2D(sig)
 	M, N = size(sig)
-	Nspec = div(N,2)+1 #Only need half the spectrum
-	𝑓 = range(0, stop=0.5, length=Nspec)
+	𝑓pts = div(N,2)+1 #Only need half the spectrum
+	𝑓 = range(0, stop=0.5, length=𝑓pts)
 	𝑓 = ones(M)*𝑓' #2D frequency matrix for downstream algorithms
-	spec = fft(sig)/(sp2p*N/4)
-	specdB = dbv.(spec[:,1:Nspec])
+	spec = fft(sig)/(M*N/4)
+	specdB = dbv.(spec[:,1:𝑓pts])
 
 	#Convert to waveforms:
 	specdB = waveform(𝑓, specdB)
@@ -51,81 +30,71 @@ function plotSpec!(plot, sig; id::String="signal", color=:blue, sp2p::Float64=1.
 	return plot
 end
 
-function plotSpec(sig; id::String="signal", color=:blue, sp2p::Float64=1.0)
+function plotSpec(sig; M::Int=1, id::String="signal", color=:blue)
 	plot = plotSpec()
-	return plotSpec!(plot, sig, id=id, color=color, sp2p=sp2p)
+	return plotSpec!(plot, sig, id=id, color=color, M=M)
 end
 
 
 #==Modulator output spectrum
 ===============================================================================#
-function plotModSpectrum(;title::String="Modulator Output Spectrum")
+function plotModSpectrum()
 	plot = plotSpec()
-	plot.title = title
+	plot.title = "Modulator Output Spectrum"
 	return plot
 end
 
-function plotModSpectrum!(plot, sig, NTF, iband::IndexRange, f::Int; sp2p::Float64=1.0,
-		id::String="simulation", color=:blue
-	)
-	sig = conv2seriesmatrix2D(sig)
-
-	M, N = size(sig)
-	if M!=1
-		throw("FIXME: replicate hann window rows for M>0")
-	end
-
-	#Compute windowed signal spectrum & SNR
-	swnd = sig .* ds_hann(N)' #windowed (1xN array)
-	spec = fft(swnd)/(sp2p*N/4)
-	snr = calculateSNR(spec[iband], f) #Must integrate from entire spectrum.
-
-	#Compute expected PSD
-	NBW = 1.5/N
-	Nspec = div(N,2)+1 #Only need half the spectrum for display purposes
-	𝑓 = collect(range(0, stop=0.5, length=Nspec))
-	Sqq = 4 * evalTF(NTF,exp.(2j*pi*𝑓)).^2 / (3*sp2p^2)
-	psde = dbp.(Sqq*NBW)
+function plotModSpectrum!(plot, specinfo; id::String="Simulation", color=:blue)
+	𝑓 = specinfo.freq
 
 	#Convert to waveforms:
-	psde = waveform(𝑓, psde)
+	ePSD = waveform(𝑓, specinfo.ePSD)
+	specdB = waveform(𝑓, specinfo.specdB)
 
-	plot = plotSpec!(plot, swnd, id=id, color=color, sp2p=sp2p)
-
-	snr_str = @sprintf("SNR = %4.1fdB", snr) #orig. coords: (0.05,-10)
-	nbw_str = @sprintf("NBW = %4.1E × 𝑓s", NBW) #orig. coords: (0.5, -90)
+	snr_str = @sprintf("SNR = %4.1fdB", specinfo.SNR) #orig. coords: (0.05,-10)
+	nbw_str = @sprintf("NBW = %4.1E × 𝑓s", specinfo.NBW) #orig. coords: (0.5, -90)
 	ann_str = string(snr_str, "\n", nbw_str)
 	push!(plot, 
-		cons(:wfrm, psde, line=set(style=:solid, color=:red, width=2), label="Expected PSD"),
+		cons(:wfrm, specdB, line=set(style=:solid, color=color, width=2), label=id),
+		cons(:wfrm, ePSD, line=set(style=:solid, color=:red, width=2), label="Expected PSD"),
 		cons(:atext, ann_str, y=-90, reloffset=set(x=0.5), align=:cc),
 	)
 
 	return plot
 end
 
-"""`plotModSpectrum(sig, NTF, iband, f; sp2p=1.0, title, id)`
+"""`plotModSpectrum(sig, NTF, iband, f; M=1, title, id)`
 
 Generate plot of modulator output spectrum:
- - sig: Time domain ΔΣ signal.
- - NTF:
- - f: Bin location of input signal.
- - sp2p: Peak-to-peak amplitude (V) of input signal.
+ - `sig`: Time domain ΔΣ signal.
+ - `NTF`:
+ - `f`: Bin location of input signal.
+ - `M`: Number of modulator steps (= nlev-1).
 """
-function plotModSpectrum(sig, NTF, iband::IndexRange, f::Int; sp2p::Float64=1.0,
-		title::String="Modulator Output Spectrum", id::String="simulation", color=:blue
-	)
-	plot = plotModSpectrum(title=title)
-	plotModSpectrum!(plot, sig, NTF, iband, f, sp2p=sp2p, id=id, color=color)
+function plotModSpectrum(specinfo; id::String="Simulation", color=:blue)
+	plot = plotModSpectrum()
+	plotModSpectrum!(plot, specinfo, id=id, color=color)
 	return plot
 end
 
 
 #==plotExampleSpectrum
 ===============================================================================#
-"""`plotExampleSpectrum(ntf, osr=64, M=1, f0=0, quadrature=false, Atest=-3, Ftest=nothing, N=2^12, sizes=nothing)`
+"""`plotExampleSpectrum(NTF, OSR=64, M=1, f0=0, quadrature=false, ampdB=-3, ftest=nothing, N=2^12, sizes=nothing)`
+
+#Inputs
+ - `M`: Number of modulator steps (= nlev-1).
+ - `ampdB`: Test tone amplitude, relative to full-scale.
 """
-function plotExampleSpectrum(ntf; osr=64, M=1, f0=0, quadrature=false,
-		Atest=-3, Ftest=nothing, N=2^12, sizes=nothing)
+function plotExampleSpectrum(NTF; OSR::Int=64, M::Int=1, f0::Float64=0, quadrature::Bool=false,
+		ampdB::Float64=-3.0, ftest=nothing, N::Int=2^12, sizes=nothing)
+	#Computed defaults
+	if isnothing(ftest)
+		ftest = default_ftest(OSR, f0=f0, quadrature=quadrature)
+	end
+	fband = default_fband(OSR, f0=f0, quadrature=quadrature)
+	delta = 2
+#@show ampdB, ftest, fband, f0, M, OSR, N
 
 	usrsizes = sizes
 	sizes = Dict{Symbol, Any}( #Defaults
@@ -138,31 +107,17 @@ function plotExampleSpectrum(ntf; osr=64, M=1, f0=0, quadrature=false,
 		push!(sizes, usrsizes...)
 	end
 
-	f1, f2 = ds_f1f2(osr, f0=f0, iscomplex=quadrature)
-
-	#Computed defaults
-	if nothing == Ftest
-		if 0==f0 || quadrature
-			Ftest = 0.15/osr
-		else
-			Ftest = f0 + 0.08/osr
-		end
-	end
-
-	delta = 2
-
 	#Plot an example spectrum
-	Amp = undbv(Atest) #Test tone amplitude, relative to full-scale.
-	f1_bin = round(Int, f1*N)
-	f2_bin = round(Int, f2*N)
-	fin = round(Int, Ftest*N)
-	local u, v
+#	fin = round(Int, ftest*N)
+	local u, simresult
 	if !quadrature
-		u = Amp*M*cos.((2π/N)*fin * (0:N-1))
-		(v,) = simulateDSM(u, ntf, nlev=M+1)
+		phi0=π/2 #Switch from sin to cos
+		(u, iftest) = genTestTone_sin(ampdB, ftest, M=M, phi0=phi0, N=N)
+@show iftest
+		simresult = simulateDSM(u, NTF, nlev=M+1)
 	else
-		u = Amp*M*exp.((2π*j/N)*fin * (0:N-1))
-		(v,) = simulateQDSM(u, ntf, nlev=M+1)
+		(u, iftest) = genTestTone_quad(ampdB, ftest, M=M, N=N)
+		simresult = simulateQDSM(u, NTF, nlev=M+1)
 	end
 
 	plot = cons(:plot, linlin, title = "Modulator Output Spectrum", legend=true,
@@ -170,37 +125,34 @@ function plotExampleSpectrum(ntf; osr=64, M=1, f0=0, quadrature=false,
 		xyaxes=set(ymin=-140, ymax=0),
 	)
 
-	NBW = 1.5/N
-	sp2p = M #peak-to-peak signal swing
-	sigwnd = v .* ds_hann(N)' #windowed signal (1xN array)
-	spec0 = fft(sigwnd)/(sp2p*N/4)
+	specinfo = calcSpecInfo(simresult.v, NTF, fband, ftest, M=M, quadrature=quadrature)
 	if !quadrature
-		fpts = div(N,2)+1
-		freq = range(0, stop=0.5, length=fpts)
 		if 0==f0
-			set(plot, loglin, xyaxes=set(xmin=.001))
+#			set(plot, loglin, xyaxes=set(xmin=.001))
 		end
+
 		#circular smoothing; not re-scaled
-		spec_smoothed = circ_smooth(abs.(spec0).^2, 16)
-		Snn = abs.(evalTF(ntf, exp.(2π*j*freq))).^2 * 2*2/12 * (delta/M)^2
-		snr = calculateSNR(spec0[f1_bin+1:f2_bin+1], fin-f1_bin)
+		spec_smoothed = circ_smooth(abs.(specinfo.spec0).^2, 16)
+		A = dbv(specinfo.spec0[specinfo.itest+1])
 
 		#Convert to waveforms & add to plot:
-		specw = waveform(freq, dbv.(spec0[1:fpts]))
-		spec_sw = waveform(freq, dbp.(spec_smoothed[1:fpts]))
-		Snnw = waveform(freq, dbp.(Snn*NBW))
+		𝑓 = specinfo.freq; 𝑓pts = length(𝑓)
+		specw = waveform(𝑓, specinfo.specdB)
+		spec_sw = waveform(𝑓, dbp.(spec_smoothed[1:𝑓pts]))
+		ePSDw = waveform(𝑓, specinfo.ePSD)
+
 		push!(plot, 
 			cons(:wfrm, specw, line=set(style=:solid, color=:cyan, width=2), label=""),
 			cons(:wfrm, spec_sw, line=set(style=:solid, color=:blue, width=2), label=""),
-			cons(:wfrm, Snnw, line=set(style=:solid, color=:magenta, width=1), label=""),
+			cons(:wfrm, ePSDw, line=set(style=:solid, color=:magenta, width=1), label=""),
 		)
 		alignleft = f0<0.25
 		align = alignleft ? :tl : :tr
-		annx  = alignleft ? f0+0.5/osr : f0-0.5/osr
+		annx  = alignleft ? f0+0.5/OSR : f0-0.5/OSR
 		tstr = @sprintf(" SQNR = %.1fdB\n @ A = %.1fdBFS\n  & OSR = %.0f\n",
-			snr, dbv(spec0[fin+1]), osr
+			specinfo.SNR, A, OSR
 		)
-		nbwstr = @sprintf("NBW=%.1e ", NBW)
+		nbwstr = @sprintf("NBW=%.1e ", specinfo.NBW)
 		#TODO: use `sizes` atext:
 		push!(plot, 
 			cons(:atext, tstr, x=annx, y=-5, align=align),
@@ -214,11 +166,11 @@ function plotExampleSpectrum(ntf; osr=64, M=1, f0=0, quadrature=false,
 		plot(freq,dbv(spec0),'c','Linewidth',1);
 		spec_smoothed = circ_smooth(abs(spec0).^2, 16);
 		plot(freq, dbp(spec_smoothed), 'b', 'Linewidth', 3);
-		Snn = abs(evalTF(ntf,exp(2i*pi*freq))).^2 * 2/12 * (delta/M)^2;
+		Snn = abs(evalTF(NTF,exp(2i*pi*freq))).^2 * 2/12 * (delta/M)^2;
 		plot(freq, dbp(Snn*NBW), 'm', 'Linewidth', 1);
-		snr = calculateSNR(spec0(N/2+1+[f1_bin:f2_bin]),fin-f1_bin);
-		msg = sprintf('SQNR = %.1fdB\n @ A=%.1fdBFS & osr=%.0f\n', ...
-		snr, dbv(spec0(N/2+fin+1)), osr );
+		SNR = calculateSNR(spec0(N/2+1+[f1_bin:f2_bin]),fin-f1_bin);
+		msg = sprintf('SQNR = %.1fdB\n @ A=%.1fdBFS & OSR=%.0f\n', ...
+		SNR, dbv(spec0(N/2+fin+1)), OSR );
 		if f0>=0
 			text(f0-0.05, -15, msg,'Hor','Right');
 		else
@@ -233,12 +185,12 @@ function plotExampleSpectrum(ntf; osr=64, M=1, f0=0, quadrature=false,
 end
 
 
-"""`plotExampleSpectrum(dsm, ntf=nothing; sizes=sizes, Atest=-3, Ftest=nothing, N=2^12)`
+"""`plotExampleSpectrum(dsm, NTF=nothing; ampdB=-3, ftest=nothing, N=2^12, sizes=sizes)`
 """
-function plotExampleSpectrum(dsm::AbstractDSM, ntf=nothing; sizes=nothing, Atest=-3, Ftest=nothing, N=2^12)
-	isnothing(ntf) && (ntf = synthesizeNTF(dsm))
-	return plotExampleSpectrum(ntf, osr=dsm.osr, M=dsm.M, f0=dsm.f0, quadrature=isquadrature(dsm),
-		Atest=Atest, Ftest=Ftest, N=N, sizes=sizes
+function plotExampleSpectrum(dsm::AbstractDSM, NTF=nothing; ampdB=-3.0, ftest=nothing, N=2^12, sizes=nothing)
+	isnothing(NTF) && (NTF = synthesizeNTF(dsm))
+	return plotExampleSpectrum(NTF, OSR=dsm.OSR, M=dsm.M, f0=dsm.f0, quadrature=isquadrature(dsm),
+		ampdB=ampdB, ftest=ftest, N=N, sizes=sizes
 	)
 end
 

@@ -66,6 +66,7 @@ include("synthesizeNTF.jl")
 include("quantizer.jl")
 include("simulateDSM.jl")
 include("realizeTF.jl")
+include("calc_spectrum.jl")
 include("plot_base.jl")
 include("plot_transient.jl")
 include("plot_spectrum.jl")
@@ -83,23 +84,29 @@ export RealDSM, QuadratureDSM #AbstractDSM?
 #Simple calculations:
 export dbm, dbp, dbv, rms
 export undbm, undbp, undbv
+export ds_f1f2
 export mapQtoR
-export calculateSNR, peakSNR
 
-#Advanced algorithms:
-#export fft #From FFTW #Don't export; high risk of collision
-export predictSNR
+#Signal generators:
+export default_ftest, default_fband
+export genTestTone, genTestTone_quad, genTestTone_sin
 
-#Transfer functions & windowing:
+#Windowing:
+export ds_hann
+
+#Misc. calculations:
+export calcSpecInfo
+export calculateSNR, peakSNR, predictSNR
+
+#Transfer functions:
 export evalTF, rmsGain
 export synthesizeNTF, realizeNTF
-export ds_hann
 
 #State space:
 export stuffABCD, scaleABCD, mapABCD
 
 #Simulations:
-export simulateSNR, simulateDSM
+export simulateDSM, simulateSNR
 
 #Plotting:
 export wfrm_stairs, waveform
@@ -110,9 +117,11 @@ export plotExampleSpectrum
 export plotSNR, plotSNR!
 export documentNTF
 export plotStateMaxima
+
+#Displaying plots:
 export inlinedisp, saveimage, displaygui
 
 #Display/text:
-export ds_orderString
+export ds_orderString, str_modulatortype
 
 end # module

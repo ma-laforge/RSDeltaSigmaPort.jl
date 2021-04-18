@@ -338,11 +338,11 @@ function simulateSNR(arg1, osr::Int=64, amp=vcat(-120:10:-20, -15, -10:0);
 	i=1
 	for A = 10 .^ (amp/20)
 		if is_function
-			(v,) = arg1(A*tone)
+			v = arg1(A*tone)
 		elseif quadrature_ntf
-			(v,) = simulateQDSM(A*tone, arg1, nlev=nlev)
+			v = simulateQDSM(A*tone, arg1, nlev=nlev).v
 		else
-			(v,) = simulateDSM(A*tone, arg1, nlev=nlev)
+			v = simulateDSM(A*tone, arg1, nlev=nlev).v
 			if quadrature
 				v = v[1,:] + im*v[2,:]
 			end

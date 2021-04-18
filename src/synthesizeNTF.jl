@@ -214,9 +214,9 @@ function synthesizeNTF(order::Int=3, osr::Int=64; opt=0, H_inf::Float64=1.5, f0:
 end
 
 synthesizeNTF(dsm::RealDSM) =
-	synthesizeNTF(dsm.order, dsm.osr, opt=dsm.opt, H_inf=dsm.Hinf, f0=dsm.f0)
+	synthesizeNTF(dsm.order, dsm.OSR, opt=dsm.opt, H_inf=dsm.Hinf, f0=dsm.f0)
 
 #synthesizeNTF(dsm::QuadratureDSM) =
-#	synthesizeQNTF(dsm.order, dsm.osr, dsm.f0, dsm.NG, dsm.ING)
+#	synthesizeQNTF(dsm.order, dsm.OSR, dsm.f0, dsm.NG, dsm.ING)
 
 #Last line

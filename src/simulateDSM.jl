@@ -34,7 +34,15 @@ function _simulateDSM(u, nq, nlev, x0, order, A, B, C, D1, savestate::Bool, trac
 		end
 	end
 
-	return (v,xn,xmax,y)
+	result = (v=v, y=y)
+	if savestate
+		result = merge(result, (xn=xn,))
+	end
+	if trackmax
+		result = merge(result, (xmax=xmax,))
+	end
+
+	return result
 end
 
 
@@ -73,20 +81,25 @@ function simulateDSM(u, ABCD::Array; nlev=2, x0=NaN, savestate::Bool=false, trac
 	return _simulateDSM(u, nq, nlev, x0, order, A, B, C, D1, savestate, trackmax)
 end
 
-"""`(v,xn,xmax,y) = simulateDSM(u,ABCD; nlev=2, x0=0)`
-or
-`(v,xn,xmax,y) = simulateDSM(u,ntf; nlev=2, x0=0)`
+"""`simresult = simulateDSM(u, [NTF|ABCD]; nlev=2, x0=NaN, savestate=false, trackmax=false))`
 
-Compute the output of a general delta-sigma modulator with input u,
-a structure described by ABCD, an initial state x0 (default zero) and 
-a quantizer with a number of levels specified by nlev.
-Multiple quantizers are implied by making nlev an array,
-and multiple inputs are implied by the number of rows in u.
+Compute the output of a general ΔΣ modulator.
 
-Alternatively, the modulator may be described by an NTF.
+# Inputs
+ - `u[]`: Input signal (Multiple inputs are implied by the number of rows in `u`)
+ - `[NTF|ABCD]`: NTF or ABCD (state-space)
+ - `nlev`: Quantizer levels (Multiple quantizers are implied by making `nlev` an array)
+ - `x0[]`: Initial state x0 (default zero).
+
 The NTF is zpk object. (The STF is assumed to be 1.)
 The structure that is simulated is the block-diagional structure used by
 zp2ss.m.
+
+# Returns `simresult::NamedTuple`:
+ - .v: Output signal of ΔΣ modulator.
+ - .xn: Internal state of ΔΣ modulator.
+ - .xmax: Maximum internal state of ΔΣ modulator.
+ - .y:
 """ simulateDSM
 
 @warn("Implements .m version of simulateDSM. C code might be more efficient.")

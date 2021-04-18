@@ -440,13 +440,14 @@ function scaleABCD(ABCD; nlev::Int=2, f=0, xlim=1, ymax=NaN, umax=NaN, N::Int=10
 		N = 10^3
 		u0 = [ exp.(2π*j*f*(-N0:-1))' .* raised_cosine exp.(2π*j*f*(0:N-1))' ] .+ 0.01*[1 j]*randn(2, N+N0)
 		if !quadrature; u0 = real.(u0); end
+		local simresult
 		for u in ulist
 			if !quadrature
-				(v, x, xmax, y) = simulateDSM(u*u0,ABCD, nlev=nlev, trackmax=true)
+				simresult = simulateDSM(u*u0,ABCD, nlev=nlev, trackmax=true)
 			else
-				(v, x, xmax, y) = simulateQDSM(u*u0,ABCD, nlev=nlev, trackmax=true)
+				simresult = simulateQDSM(u*u0,ABCD, nlev=nlev, trackmax=true)
 			end
-			if maximum(abs.(y)) > ymax
+			if maximum(abs.(simresult.y)) > ymax
 				umax = u #umax is the smallest input found which causes 'instability'
 				break
 			end
@@ -464,19 +465,20 @@ function scaleABCD(ABCD; nlev::Int=2, f=0, xlim=1, ymax=NaN, umax=NaN, N::Int=10
 	maxima = zeros(1,order) .- 1
 	ulist = range(0.7*umax, stop=umax, length=10)
 
+	local simresult
 	for u in ulist
 		if !quadrature
-			(v, x, xmax, y) = simulateDSM(u*u0,ABCD, nlev=nlev, trackmax=true)
+			simresult = simulateDSM(u*u0,ABCD, nlev=nlev, trackmax=true)
 		else
-			(v, x, xmax, y) = simulateQDSM(u*u0,ABCD, nlev=nlev, trackmax=true)
+			simresult = simulateQDSM(u*u0,ABCD, nlev=nlev, trackmax=true)
 		end
-		if maximum(abs.(y)) > ymax
+		if maximum(abs.(simresult.y)) > ymax
 			break
 		end
 		#We need to do this at least once.
 		umax = u #umax is the largest input which keeps |y| < ymax
-		#maxima = maximum([maxima; xmax'], dims=1)
-		maxima = max.(maxima, xmax')
+		#maxima = maximum([maxima; simresult.xmax'], dims=1)
+		maxima = max.(maxima, simresult.xmax')
 	end
 
 	#Scale the modulator so that all states are at most xlim.

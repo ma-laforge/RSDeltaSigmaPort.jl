@@ -7,32 +7,24 @@ j=im
 
 
 
-"""`result = dsexample1(dsm, Atest::Float64=-3.0, Ftest=nothing, LiveDemo=false)`
+"""`result = dsexample1(dsm, ampdB::Float64=-3.0, ftest=nothing, LiveDemo=false)`
 
 Example lowpass/bandpass real/quadrature modulator design.
 
 # Output `result`: `Dict` of:
- - :nlev, :ntf, :ABCD, :umax, :amp, :snr, :peak_snr
+ - :nlev, :NTF, :ABCD, :umax, :amp, :snr, :peak_snr
  - :coeff (a NamedTuple of: a, g, b c)
 """
-function dsexample1(dsm::AbstractDSM, Atest::Float64=-3.0, Ftest=nothing, LiveDemo::Bool=false)
+function dsexample1(dsm::AbstractDSM, ampdB::Float64=-3.0, ftest=nothing, LiveDemo::Bool=false)
 	#Computed defaults
-	if nothing == Ftest
-		if 0==dsm.f0 || isquadrature(dsm)
-			Ftest = 0.15/dsm.osr
-		else
-			Ftest = dsm.f0 + 0.08/dsm.osr
-		end
+	if isnothing(ftest)
+		ftest = default_ftest(dsm)
 	end
 
 	#Derived parameters
 	nlev = dsm.M + 1
-	typestr = (0==dsm.f0) ? "Lowpass" : "Bandpass"
-	if isquadrature(dsm)
-		typestr = "Quadrature" * typestr
-	end
-
-	println("\t", ds_orderString(dsm.order,true), "-Order $typestr Example... ")
+	dsmtypestr = str_modulatortype(dsm)
+	println("\t", dsmtypestr, " Example... ")
 	#TODO: support plot attributes?:
 	sizes = Dict{Symbol, Any}(
 		:lw => 1, #LineWidth
@@ -50,19 +42,19 @@ function dsexample1(dsm::AbstractDSM, Atest::Float64=-3.0, Ftest=nothing, LiveDe
 
 	#NTF synthesis and realization
 	#fprintf(1,'Doing NTF synthesis and realization... ');
-	local ntf, ABCD
+	local NTF, ABCD
 	if !isquadrature(dsm)
-		ntf = synthesizeNTF(dsm)
-		a,g,b,c = realizeNTF(ntf, dsm.form)
+		NTF = synthesizeNTF(dsm)
+		a,g,b,c = realizeNTF(NTF, dsm.form)
 		z0 = exp(2π*j*dsm.f0)
 		b = [abs(b[1]+b[2]*(1-z0)) zeros(1,length(b)-1)] #Use a single feed-in for the input
 		ABCD = stuffABCD(a,g,b,c,dsm.form)
 	else
-		ntf = synthesizeQNTF(dsm)
-		ABCD = realizeQNTF(ntf, dsm.form, 1)
+		NTF = synthesizeQNTF(dsm)
+		ABCD = realizeQNTF(NTF, dsm.form, 1)
 	end
 	#fprintf(1,'Done.\n');
-	plot = documentNTF(ABCD, dsm.osr, dsm.f0, isquadrature(dsm), sizes, 1)
+	plot = documentNTF(ABCD, dsm.OSR, dsm.f0, isquadrature(dsm), sizes, 1)
 #	displaygui(plot)
 
 	#Time-domain simulations
@@ -71,32 +63,34 @@ function dsexample1(dsm::AbstractDSM, Atest::Float64=-3.0, Ftest=nothing, LiveDe
 	#Time-domain plot
 	N = 100
 	t = 0:N-1
-	local u, v
+	#Do not use genTestTone() (N too small; ftest gets rounded to 0Hz).
+	#(u, iftest) = genTestTone(dsm, ampdB, ftest, N=100)
+	local simresult
 	if !isquadrature(dsm)
-		u = undbv(Atest)*dsm.M*sin.( 2π*Ftest*t )
-		(v,) = simulateDSM(u, ABCD, nlev = nlev)
+		u = undbv(ampdB)*dsm.M*sin.( 2π*ftest*t )
+		simresult = simulateDSM(u, ABCD, nlev=nlev)
 	else
-		u = undbv(Atest)*dsm.M*exp.( 2π*j*Ftest*t )
-		(v,) = simulateQDSM(u, ABCD, nlev=nlev)
+		u = undbv(ampdB)*dsm.M*exp.( 2π*j*ftest*t );
+		simresult = simulateQDSM(u, ABCD, nlev=nlev)
 	end
-	plot = plotModTransient(u, v, legend=false)
+	plot = plotModTransient(u, simresult.v, legend=false)
 		#CHECK FOR COLORS
-	ypk = (dsm.M+0.25)
-	set(plot, xyaxes=set(ymin=-ypk, ymax=ypk))
+	ylim = (dsm.M+0.25)
+	set(plot, xyaxes=set(ymin=-ylim, ymax=ylim))
 	displaygui(plot)
 
 	#Example spectrum
-	plot = plotExampleSpectrum(dsm, sizes=sizes, Atest=Atest, Ftest=Ftest)
+	plot = plotExampleSpectrum(dsm, NTF, ampdB=ampdB, ftest=ftest, sizes=sizes)
 	displaygui(plot)
 
 	#SQNR plot
-	plot = plotSNR(v, ntf, dsm.osr, f0=dsm.f0)
+	plot = plotSNR(simresult.v, NTF, dsm.OSR, f0=dsm.f0)
 		#TODO: Apply sizes
 	displaygui(plot)
 
 	results = Dict{Symbol, Any}(
 		:nlev => nlev,
-		:ntf => ntf,
+		:NTF => NTF,
 		:ABCD => ABCD,
 #		:amp => amp,
 #		:snr => snr,
@@ -111,7 +105,9 @@ function dsexample1(dsm::AbstractDSM, Atest::Float64=-3.0, Ftest=nothing, LiveDe
 	return results
 end
 
-dsm = RealDSM()
+opt=2
+#dsm = RealDSM(order=5, OSR=32, form=:CRFB, Hinf=1.5, opt=2)
+dsm = RealDSM(order=5, OSR=32, form=:CRFB, Hinf=1.5, opt=opt)
 results = dsexample1(dsm)
 
 

@@ -13,9 +13,10 @@ function plotStateMaxima(u, ABCD; nlev::Int=2, N::Int=10^5)
 
 	for i = 1:length(u)
 		ui = u[i]
-		v,xn,xmax = simulateDSM(ui*T, ABCD, trackmax=true)
-		maxima[:,i] = xmax[:]
-		if any(xmax .> 1e2)
+
+		simresult = simulateDSM(ui*T, ABCD, trackmax=true)
+		maxima[:,i] = simresult.xmax[:]
+		if any(simresult.xmax .> 1e2)
 			umax = ui
 			u = u[1:i]
 			maxima = maxima[:,1:i]
