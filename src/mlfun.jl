@@ -98,7 +98,6 @@ end
 #TODO: Will algorithms work without collect (possibly faster?):
 eye(n::Int) = collect(LinearAlgebra.I(n))
 
-
 #It sounds like this should be implementation of orth:
 #orth(A) = LinearAlgebra.qr(A).Q
 
@@ -113,6 +112,8 @@ function poly(rA)
 	end
 	return result
 end
+
+eig(a) = eigen(a).values
 
 #Implement interp1 using linear interpolation:
 function interp1_lin(xA, yA, xv)

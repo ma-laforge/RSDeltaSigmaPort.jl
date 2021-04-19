@@ -2,6 +2,34 @@
 #-------------------------------------------------------------------------------
 
 
+#==Vector generators
+===============================================================================#
+"""`𝑓 = ds_freq(OSR=64, f0=0, quadrature=false)`
+
+Frequency vector suitable for plotting the frequency response of an NTF.
+"""
+function ds_freq(;OSR::Int=64, f0::Float64=0, quadrature::Bool=false)
+	local f_left, f_special
+	if quadrature
+		f_left = -0.5
+		f_special = [f0 -f0]
+	else
+		f_left = 0
+		f_special = f0
+	end
+
+	𝑓 = collect(range(f_left, stop=0.5, length=100))
+	#Use finer spacing in the vicinity of the passband
+	for fx = f_special
+		f1 = max(f_left, fx-1/OSR)
+		f2 = min(0.5,fx+2/OSR)
+		deleteat!(𝑓, (𝑓 .<= f2) .& (𝑓 .>= f1))
+		𝑓 = sort( vcat(𝑓, range(f1, stop=f2, length=100)) )
+	end
+	return 𝑓
+end
+
+
 #==NTF plots
 ===============================================================================#
 function plotNTF(isbandpass)
@@ -103,16 +131,118 @@ plotNTF(NTF::ZPKData, args...; f0=0, kwargs...) =
 
 #==documentNTF
 ===============================================================================#
-"""`axis_handle = documentNTF(ntf|ABCD|mod_struct,osr=64,f0=0,quadrature=0,sizes,plotFreqRespOnly=1)`
+"""`plot = documentNTF(NTF|ABCD|mod_struct; OSR=64, f0=0, quadrature=false, frespOnly=true, sizes=nothing)`
 
 The first argument is either the NTF, ABCD matrix or a struct containing 
-ntf, osr=64, f0=0, quadrature=0 and optionally stf. 
+NTF, OSR=64, f0=0, quadrature=0 and optionally stf. 
 If the first argument is a struct, then no other arguments should be supplied.
 If the first argument is ABCD, the stf is also plotted.
 """
-function documentNTF(arg1,osr,f0,quadrature,sizes,plotFreqRespOnly)
-	@warn("documentNTF not implemented (see DocumentNTF.m)")
-	return #axis_handle
+function documentNTF(arg1; OSR::Int=64, f0::Float64=0.0, quadrature::Bool=false, frespOnly::Bool=true, sizes=nothing)
+	STF=nothing
+	local NTF
+	if isa(arg1, ZPKData)
+		NTF = arg1
+	else #if isa(arg1, Array) #Assume ABCD matrix
+		ABCD = arg1
+		NTF, STF = calculateTF(ABCD)
+	end
+
+	logplot = f0==0
+	if quadrature
+   	f_left = -0.5
+   elseif logplot
+   	f_left = 1e-3
+   else
+   	f_left = 0.0
+	end
+
+	pcoll = cons(:plot_collection, ncolumns=2, title="")
+	if !frespOnly
+		#Plot poles and zeros
+		plot = plotPZ(NTF, color=:blue)
+		push!(pcoll, plot)
+
+		pcoll.bblist = [ #Format plot locations
+			BoundingBox(0, 0.5, 0, 1), #Pole-zero plot
+			BoundingBox(0.5, 1, 0, 1), #Frequency spectrum
+		]
+	end
+
+	#Frequency response
+	𝑓 = ds_freq(OSR=OSR, f0=f0, quadrature=quadrature)
+	z = exp.(2π*j*𝑓)
+	H = dbv.(evalTF(NTF, z))
+
+	axes = logplot ? loglin : linlin
+	plot = cons(:plot, axes, title="Frequency Response", legend=false,
+		labels=set(xaxis="Normalized Frequency", yaxis=""),
+		xyaxes=set(xmin=f_left, xmax=0.5, ymin=-100, ymax=15),
+	)
+	push!(pcoll, plot)
+
+	H = waveform(𝑓, H)
+	push!(plot,
+		cons(:wfrm, H, line=set(style=:solid, color=:blue, width=2), label=""),
+	)
+
+	if !isnothing(STF)
+#		plot.title = "NTF and STF"
+		G = dbv.(evalTF(STF,z))
+		G = waveform(𝑓, G)
+		push!(plot,
+			cons(:wfrm, G, line=set(style=:solid, color=:magenta, width=2), label=""),
+		)
+	end
+	f1, f2 = ds_f1f2(OSR=OSR, f0=f0, iscomplex=quadrature)
+	NG0 = dbv.(rmsGain(NTF, f1, f2))
+	NG0w = waveform([max(f1,f_left), f2], NG0*[1,1])
+	push!(plot,
+		cons(:wfrm, NG0w, line=set(style=:dash, color=:black, width=2), label=""),
+	)
+
+	tstr = @sprintf("  %.0fdB", NG0)
+	if f0==0 && logplot
+		a = cons(:atext, tstr, x=sqrt(f_left*0.5/OSR), y=NG0+2, align=:bc)
+	else
+		a = cons(:atext, tstr, x=f2, y=NG0-1, align=:cl)
+	end
+	push!(plot, a)
+	#set(h, 'FontSize',sizes.fs, 'FontWeight',sizes.fw);
+	msg = @sprintf(" Inf-norm of H = %.2f\n 2-norm of H = %.2f", infnorm(NTF)[1], rmsGain(NTF,0,1));
+	if f0<0.25
+		a = cons(:atext, msg, x=0.48, y=0.0, align=:tr)
+	else
+		a = cons(:atext, msg, x=f_left, y=0.0, align=:tl)
+	end
+	push!(plot, a)
+	#set(h, 'FontSize',sizes.fs, 'FontWeight',sizes.fw);
+	if quadrature
+		ING0 = dbv(rmsGain(ntf,-f1,-f2))
+		ING0w = waveform(-1*[f1, f2], ING0*[1, 1])
+		tstr = @sprintf("%.0fdB", ING0)
+		push!(plot,
+			cons(:wfrm, NG0w, line=set(style=:solid, color=:black, width=2), label=""),
+			cons(:atext, tstr, x=-f0, y=ING0+1, align=:bc),
+		)
+	end
+	#set(h, 'FontSize',sizes.fs, 'FontWeight',sizes.fw);
+
+	return pcoll
+end
+
+function plotExampleSpectrum(dsm::AbstractDSM, NTF=nothing; ampdB=-3.0, ftest=nothing, N=2^12, sizes=nothing)
+	isnothing(NTF) && (NTF = synthesizeNTF(dsm))
+	return plotExampleSpectrum(NTF, OSR=dsm.OSR, M=dsm.M, f0=dsm.f0, quadrature=isquadrature(dsm),
+		ampdB=ampdB, ftest=ftest, N=N, sizes=sizes
+	)
+end
+
+"""`documentNTF(dsm, SYS=nothing; frespOnly=true, sizes=nothing)`
+"""
+function documentNTF(dsm::AbstractDSM, SYS=nothing; frespOnly::Bool=true, sizes=nothing)
+	isnothing(SYS) && (SYS = synthesizeNTF(SYS))
+	return documentNTF(SYS; OSR=dsm.OSR, f0=dsm.f0, quadrature=false, frespOnly=frespOnly, sizes=sizes)
 end
 
 #Last line

@@ -110,9 +110,9 @@ conv2seriesmatrix2D(x::Array{T, 2}) where T<:Number = x #Assume format is ok.
 
 #==Basic frequency calculations/defaults
 ===============================================================================#
-"""`(f1, f2) = ds_f1f2(OSR=64; f0=0, iscomplex=0)`
+"""`(f1, f2) = ds_f1f2(;OSR=64, f0=0, iscomplex=0)`
 """
-function ds_f1f2(OSR::Int; f0::Float64=0, iscomplex::Bool=false)
+function ds_f1f2(;OSR::Int=64, f0::Float64=0, iscomplex::Bool=false)
 	local f1, f2
 	if iscomplex
 		f1 = f0-0.5/OSR
@@ -130,7 +130,7 @@ function ds_f1f2(OSR::Int; f0::Float64=0, iscomplex::Bool=false)
 end
 
 default_fband(OSR::Int; f0::Float64=0.0, quadrature::Bool=false) =
-	collect(ds_f1f2(OSR, f0=f0, iscomplex=quadrature)) #Vector form
+	collect(ds_f1f2(OSR=OSR, f0=f0, iscomplex=quadrature)) #Vector form
 default_fband(dsm::RealDSM) = default_fband(dsm.OSR, f0=dsm.f0, quadrature=false)
 default_fband(dsm::QuadratureDSM) = default_fband(dsm.OSR, f0=dsm.f0, quadrature=false)
 

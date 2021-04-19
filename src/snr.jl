@@ -355,4 +355,29 @@ function simulateSNR(arg1, osr::Int=64, amp=vcat(-120:10:-20, -15, -10:0);
 	return (snr,amp)
 end
 
+#Not meant to be called externally:
+function _calcSNRInfo(NTF, OSR::Int, M::Int, f0::Float64)
+	nlev=M+1
+	SNR, amp = simulateSNR(NTF, OSR, f0=f0, nlev=nlev)
+	pk_snr, pk_amp = peakSNR(SNR, amp) #Single values
+
+	vs_amp_predicted = nothing
+	if nlev == 2 #predictSNR() only supports 2 levels
+		SNR_pred, amp_pred = predictSNR(NTF, OSR, f0=f0)
+		amp_pred = conv2seriesmatrix2D(amp_pred*1.0) #Ensure amplitudes are Float64
+		vs_amp_predicted=(amp_pred, SNR_pred)
+	end
+
+	return (vs_amp_sim=(amp, SNR), peak=(pk_amp, pk_snr),
+		vs_amp_predicted=vs_amp_predicted, OSR=OSR
+	)
+end
+
+"""`calcSNRInfo(sig, dsm::RealDSM; NTF=nothing)`
+"""
+function calcSNRInfo(dsm::RealDSM; NTF=nothing)
+	isnothing(NTF) && (NTF = synthesizeNTF(dsm))
+	return _calcSNRInfo(NTF, dsm.OSR, dsm.M, dsm.f0)
+end
+
 #Last line

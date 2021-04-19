@@ -94,7 +94,6 @@ function plotExampleSpectrum(NTF; OSR::Int=64, M::Int=1, f0::Float64=0, quadratu
 	end
 	fband = default_fband(OSR, f0=f0, quadrature=quadrature)
 	delta = 2
-#@show ampdB, ftest, fband, f0, M, OSR, N
 
 	usrsizes = sizes
 	sizes = Dict{Symbol, Any}( #Defaults
@@ -113,7 +112,6 @@ function plotExampleSpectrum(NTF; OSR::Int=64, M::Int=1, f0::Float64=0, quadratu
 	if !quadrature
 		phi0=π/2 #Switch from sin to cos
 		(u, iftest) = genTestTone_sin(ampdB, ftest, M=M, phi0=phi0, N=N)
-@show iftest
 		simresult = simulateDSM(u, NTF, nlev=M+1)
 	else
 		(u, iftest) = genTestTone_quad(ampdB, ftest, M=M, N=N)

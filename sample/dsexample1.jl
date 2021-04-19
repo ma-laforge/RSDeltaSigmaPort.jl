@@ -2,6 +2,7 @@
 using RSDeltaSigmaPort
 using RSDeltaSigmaPort: AbstractDSM, isquadrature
 using RSDeltaSigmaPort.EasyPlot #set, cons
+using RSDeltaSigmaPort.EasyPlot.Colors
 import Printf: @sprintf
 j=im
 
@@ -54,8 +55,9 @@ function dsexample1(dsm::AbstractDSM, ampdB::Float64=-3.0, ftest=nothing, LiveDe
 		ABCD = realizeQNTF(NTF, dsm.form, 1)
 	end
 	#fprintf(1,'Done.\n');
-	plot = documentNTF(ABCD, dsm.OSR, dsm.f0, isquadrature(dsm), sizes, 1)
-#	displaygui(plot)
+	plot = documentNTF(dsm, ABCD, sizes=sizes, frespOnly=false)
+	saveimage(:png, "dsexample1_NTF.png", plot, AR=2/1, width=900)
+	displaygui(plot)
 
 	#Time-domain simulations
 	#fprintf(1,'Doing time-domain simulations... ');
@@ -84,18 +86,69 @@ function dsexample1(dsm::AbstractDSM, ampdB::Float64=-3.0, ftest=nothing, LiveDe
 	displaygui(plot)
 
 	#SQNR plot
-	plot = plotSNR(simresult.v, NTF, dsm.OSR, f0=dsm.f0)
+	snrinfo = calcSNRInfo(dsm, NTF=NTF)
+	plot = plotSNR(snrinfo, dsm)
 		#TODO: Apply sizes
 	displaygui(plot)
+
+	if isquadrature(dsm) #Example I/Q mismatch
+		error("Quadrature section not ported over.")
+	end
+
+	umax = nothing
+	if !LiveDemo && !isquadrature(dsm) #Dynamic range scaling
+		#fprintf(1,'Doing dynamic range scaling... ');
+		ABCD0 = ABCD
+		ABCD, umax = scaleABCD(ABCD0, nlev=nlev, f=dsm.f0)
+		a,g,b,c = mapABCD(ABCD, dsm.form)
+		#fprintf(1,'Done.\n');
+		println("Verifying dynamic range scaling...")
+		u = range(0, stop=0.95*umax, length=30)
+		N = 10^4; N0 = 50
+		test_tone = cos.(2π*dsm.f0 * (0:N-1))
+		test_tone[1:N0] = test_tone[1:N0] .* (0.5 .- 0.5*cos.(2π/N0 * (0:N0-1)))
+		maxima = zeros(dsm.order, length(u))
+		for i in 1:length(u)
+			ui = u[i]
+			simresult = simulateDSM(ui*test_tone, ABCD, nlev=nlev, trackmax=true)
+			maxima[:,i] = simresult.xmax[:]
+			if any(simresult.xmax .> 1e2)
+				@warn("Warning, umax from scaleABCD was too high.")
+				umax = ui
+				u = u[1:i]
+				maxima = maxima[:,1:i]
+				break
+			end
+		end
+		#fprintf(1,'Done.\n')
+
+		plot = cons(:plot, title = "State Maxima", legend=true,
+			labels=set(xaxis="DC Input", yaxis="Peak value"),
+			xyaxes=set(xmin=0, xmax=umax, ymin=0, ymax=1),
+		)
+		colors = range(HSV(0,1,1), stop=HSV(-360,1,1), length=dsm.order)
+		for i = 1:dsm.order
+			c = colors[i]
+			wfrm = waveform(u, maxima[i,:])
+			simglyph = cons(:a, glyph=set(shape=:o, size=1, color=c, fillcolor=c))
+
+			push!(plot,
+			cons(:wfrm, wfrm, simglyph, line=set(style=:dash, color=c, width=2), label="state $i"),
+			)
+		end
+
+		displaygui(plot)
+	end
+
+
 
 	results = Dict{Symbol, Any}(
 		:nlev => nlev,
 		:NTF => NTF,
 		:ABCD => ABCD,
-#		:amp => amp,
-#		:snr => snr,
-#		:umax => umax,
-#		:peak_snr => peak_snr,
+		:SNR_vs_amp_sim => snrinfo.vs_amp_sim,
+		:umax => umax,
+		:peak_snr => snrinfo.peak[2],
 	)
 
 	if !LiveDemo && !isquadrature(dsm)

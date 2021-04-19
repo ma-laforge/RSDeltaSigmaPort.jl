@@ -89,4 +89,143 @@ function powerGain(num, den, Nimp0::Int=100)
 	return (pGain, Nimp)
 end
 
+
+#==infnorm
+===============================================================================#
+"""`nabsH(w, H)`
+
+Computes the negative of the absolute value of H 
+at the specified frequency on the unit circle. 
+
+This function is used by infnorm().
+"""
+function nabsH(w, H)
+	z = exp.(j*w)
+	return -abs.(evalTF(H, z))
+end
+
+
+"""`(Hinf,fmax) = infnorm(H)`
+
+Find the infinity norm of a z-domain transfer function.
+
+Get a rough idea of the location of the maximum.
+"""
+function infnorm(H)
+	N = 129
+	w = range(0, stop=2π, length=N); dw = 2π/(N-1)
+	Hval = abs.(evalTF(H, exp.(j*w)))
+	wi = argmax(abs.(Hval))[1]
+	Hinf = Hval[wi]
+
+	local wmax
+	if false #NEEDSTOOLKIT
+#= Algorithms that use toolkits (files/functions: optimset, fminbnd, fmin)
+	if exist('optimset','file')==2 & exist('fminbnd','file')==2
+		% Home in using the "fminbnd" function.
+		options = optimset('TolX',1e-8,'TolFun',1e-6);
+		wmax = fminbnd('nabsH',w(wi)-dw,w(wi)+dw,options,H);
+	elseif exist('fmin','file')==2
+		% Home in using the "fmin" function.
+		options=zeros(1,18);
+		options(2)=1e-8;
+		options(3)=1e-6;
+		wmax = fmin('nabsH',w(wi)-dw,w(wi)+dw,options,H);
+=#
+	else
+		msg = "Hinf: Warning. Optimization toolbox functions not found.\n" *
+			" The result returned may not be very accurate."
+		@warn(msg)
+		wmax = w[wi]
+	end
+
+	Hinf = -nabsH(wmax, H)
+	fmax = wmax/(2*pi)
+	return (Hinf, wmax)
+end
+
+
+#==calculateTF
+===============================================================================#
+#Use a loophole to set complex poles and zeros in zpk objects
+#MALaforge: I think this tries to implement minreal()
+function setPolesAndZeros(z,p,k)
+	tol = 3e-5 #tolerance for pole-zero cancellation
+	z = deepcopy(z) #Don't change original
+	Z = _zpk(ComplexF64[0.0],ComplexF64[],1.0,1.0)
+	ztf = _zpk(ComplexF64[],ComplexF64[],k,1.0)
+	for i in 1:length(p)
+		match = abs.(p[i] .- z) .< tol
+		if any(match)
+			f = findall(match)
+			deleteat!(z, f[1])
+		else
+			#ztf = ztf/(Z-p[i]) #Original code
+			push!(ztf.p, p[i]) #VERIFYME: Think this is intent of original code
+		end
+	end
+	for i in 1:length(z)
+		#ztf = ztf*(Z-z[i]) #Original code
+		push!(ztf.z, z[i]) #VERIFYME: Think this is intent of original code
+	end
+	return ztf
+end
+
+"""`(NTF,STF) = calculateTF(ABCD, k=1, wantSTF=true)`
+
+Calculate the NTF and STF of a delta-sigma modulator whose loop filter
+is described by the ABCD matrix, assuming a quantizer gain of k.
+The NTF and STF are zpk objects.
+"""
+function calculateTF(ABCD, k::Vector=[1], wantSTF::Bool=true)
+	nq = length(k)
+	n = size(ABCD,1) - nq
+	nu = size(ABCD,2) - size(ABCD,1)
+
+	A,B,C,D = partitionABCD(ABCD, nu+nq)
+	B1 = B[:,1:nu]
+	B2 = B[:,nu+1:end]
+	D1 = D[:,1:nu]
+	if any(any( D[:,nu+1:end] .!= 0 ))
+		throw("D2 must be zero")
+	end
+	K = diagm(k)
+	#Find the noise transfer function by forming the closed-loop
+	#system (sys_cl) in state-space form.
+	Acl = A + B2*K*C
+	Bcl = hcat(B1 + B2*K*D1, B2)
+	Ccl = K*C
+	Dcl = [K*D1 eye(nq)]
+	#map(display, [Acl, Bcl, Ccl, Dcl])
+
+	local NTF, STF
+	tol = min(1e-3, max(1e-6, eps(1.0)^(1/(size(ABCD,1)))))
+	if false # true || all(imag.(ABCD) .== 0) #real modulator (Original implementation)
+		#REQUESTHELP
+		sys_cl = _ss(Acl,Bcl,Ccl,Dcl,1)
+		tfs = _zpk(sys_cl)
+		mtfs = _minreal(tfs,tol)
+		#MALaforge: Can't make sense of the following; not sure what structure should be:
+		STF = mtfs[:,1:nu]
+		NTF = mtfs[:,nu+1:nu+nq]
+#	elseif true || all(imag.(ABCD) .== 0) #real modulator (Direct use of ControlSystems)
+#		sys_cl = ControlSystems.ss(Acl,Bcl,Ccl,Dcl,1)
+#		tfs = ControlSystems.zpk(sys_cl)
+#		mtfs = ControlSystems.minreal(tfs, tol)
+#		z,p,k = ControlSystems.zpkdata(mtfs)
+#		map(display, [z, p, k])
+#		@show nu, nq
+	else #quadrature modulator and less advanced language features
+		p = eig(Acl)
+		NTFz = eig(A)
+		NTF = setPolesAndZeros(NTFz, p, 1)
+		if wantSTF
+	        @warn("Sorry. calculateTF cannot compute the STF for a complex modulator with this version of the code.")
+   	 end
+	    STF=nothing
+	end
+	return (NTF, STF)
+end
+
+
 #Last line

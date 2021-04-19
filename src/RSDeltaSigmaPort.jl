@@ -14,12 +14,14 @@ module RSDeltaSigmaPort
 #=Flags:
 	-TODO
 	-VERIFYME: is this the correct behaviour???
+   -NEEDSTOOLKIT
+	-REQUESTHELP
 =#
 
 import Random
 import Statistics: mean
 import LinearAlgebra
-import LinearAlgebra: norm, diagm
+import LinearAlgebra: norm, diagm, eigen
 import SpecialFunctions: erfinv
 import Interpolations
 import FFTW: fft, fftshift
@@ -96,7 +98,7 @@ export ds_hann
 
 #Misc. calculations:
 export calcSpecInfo
-export calculateSNR, peakSNR, predictSNR
+export calcSNRInfo, calculateSNR, peakSNR, predictSNR
 
 #Transfer functions:
 export evalTF, rmsGain

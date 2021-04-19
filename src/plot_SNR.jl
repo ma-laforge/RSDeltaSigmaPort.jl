@@ -3,61 +3,46 @@
 
 #==SNR plot
 ===============================================================================#
-#TODO: Rename `plotSQNR`
-function plotSNR(; legend::Bool=true,
-		title::String="SNR: Theory vs Simulation"
-	)
-
-	plot = cons(:plot, linlin, title=title, legend=legend,
+#TODO: Rename `plotSQNR`?
+function plotSNR()
+	plot = cons(:plot, linlin, title="SQNR vs. Input Level", legend=true,
 		#xyaxes=set(xmin=-120, xmax=0, ymin=0, ymax=120),
 		xyaxes=set(ymax=120), #Clip infinite gains only
 		labels=set(xaxis="Input Level (dBFS)", yaxis="SQNR (dB)"),
 	)
-
 	return plot
 end
 
-function plotSNR!(plot, sig, NTF, OSR::Int; f0::Float64=0.0, nlev::Int=2,
-		id::String="simulation", color=:green
-	)
-	sig = conv2seriesmatrix2D(sig)
-	M, N = size(sig)
-
-	snr, amp = simulateSNR(NTF, OSR, f0=f0, nlev=nlev)
-	pk_snr, pk_amp = peakSNR(snr, amp) #Single values
-
-	snr_pred, amp_pred = nothing, nothing
-	if nlev == 2 #predictSNR() only supports 2 levels
-		snr_pred, amp_pred = predictSNR(NTF, OSR, f0=f0)
-		amp_pred = conv2seriesmatrix2D(amp_pred*1.0) #Ensure amplitudes are Float64
-	end
-
-	#Convert to waveforms:
-	snr = waveform(amp, snr)
-
+function plotSNR!(plot, snrinfo, dsm::RealDSM; id::String="simulation", color=:green)
 	simglyph = cons(:a, glyph=set(shape=:o, size=1, color=color, fillcolor=color))
 
-	snr_str = @sprintf("peak SNR = %4.1fdB\n@ A = %4.1f dBFS (OSR = %d)",
-		pk_snr, pk_amp, OSR #orig. coords: (-25, 85)
+	#Access data:
+	(amp, SNR) = snrinfo.vs_amp_sim
+	(pk_amp, pk_SNR) = snrinfo.peak
+
+	#Convert to waveforms:
+	SNR = waveform(amp, SNR)
+
+	infostr = @sprintf("peak SNR = %4.1fdB\n@ A = %4.1f dBFS (OSR = %d)",
+		pk_SNR, pk_amp, dsm.OSR #orig. coords: (-25, 85)
 	)
 	push!(plot, 
-		cons(:wfrm, snr, simglyph, line=set(style=:dashdot, color=color, width=2), label="simulation"),
-		cons(:atext, snr_str, x=-25, y=85, align=:cr),
+		cons(:wfrm, SNR, simglyph, line=set(style=:dashdot, color=color, width=2), label="simulation"),
+		cons(:atext, infostr, x=-25, y=85, align=:cr),
 	)
-	if !isnothing(snr_pred)
-		snr_pred = waveform(amp_pred, snr_pred) #Convert to waveform
+	if !isnothing(snrinfo.vs_amp_predicted)
+		(amp_pred, SNR_pred) = snrinfo.vs_amp_predicted
+		SNR_pred = waveform(amp_pred, SNR_pred) #Convert to waveform
 		push!(plot,
-			cons(:wfrm, snr_pred, line=set(style=:solid, color=:red, width=2), label="theory"),
+			cons(:wfrm, SNR_pred, line=set(style=:solid, color=:red, width=2), label="theory"),
 		)
 	end
 	return plot
 end
 
-function plotSNR(sig, NTF, OSR::Int; f0::Float64=0.0, nlev::Int=2, legend::Bool=true,
-		title::String="SQNR vs. Input Level", id::String="simulation", color=:green
-	)
-	plot = plotSNR(legend=legend, title=title)
-	plotSNR!(plot, sig, NTF, OSR, f0=f0, nlev=nlev, id=id, color=color)
+function plotSNR(snrinfo, dsm::RealDSM; id::String="simulation", color=:green)
+	plot = plotSNR()
+	plotSNR!(plot, snrinfo, dsm, id=id, color=color)
 	return plot
 end
 

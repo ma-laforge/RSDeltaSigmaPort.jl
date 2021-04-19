@@ -1,4 +1,4 @@
-# Demonstrate simulateDSM, (simulateSNR and predictSNR) => plotSNR
+# Demonstrate simulateDSM, (simulateSNR and predictSNR) => calcSNRInfo
 using RSDeltaSigmaPort
 using RSDeltaSigmaPort.EasyPlot #set, cons
 import RSDeltaSigmaPort: BoundingBox
@@ -39,9 +39,9 @@ displaygui(plot)
 
 @info("Plotting SNR vs input power")
 #-------------------------------------------------------------------------------
-plot = plotSNR(simresult.v, NTF, OSR,
-	title="SNR curve- theory and simulation"
-)
+snrinfo = calcSNRInfo(dsm, NTF=NTF)
+plot = plotSNR(snrinfo, dsm)
+	plot.title="SNR curve- theory and simulation"
 saveimage(:png, "dsdemo2_o5_snr.png", plot, AR=2/1, width=900)
 displaygui(plot)
 
@@ -80,9 +80,9 @@ displaygui(plot)
 
 @info("Plotting SNR vs input power")
 #-------------------------------------------------------------------------------
-plot = plotSNR(simresult.v, NTF, OSR, f0=f0,
-	title="SNR curve- theory and simulation"
-)
+snrinfo = calcSNRInfo(dsm, NTF=NTF)
+plot = plotSNR(snrinfo, dsm)
+	plot.title="SNR curve- theory and simulation"
 saveimage(:png, "dsdemo2_bp_o5_snr.png", plot, AR=2/1, width=900)
 displaygui(plot)
 
@@ -119,8 +119,10 @@ for (v, c) in zip(v_list, color_list) #Each simulated output
 end
 
 #Append SNR vs input curves:
-plot = plotSNR(v_list[1], NTF_list[1], OSR, nlev=M+1, color=color_list[1], legend=false, title="SQNR")
-plotSNR!(plot, v_list[2], NTF_list[2], OSR, nlev=M+1, color=color_list[2])
+snrinfo = calcSNRInfo(dsm_list[1], NTF=NTF_list[1])
+plot = plotSNR(snrinfo, dsm_list[1], color=color_list[1])
+snrinfo = calcSNRInfo(dsm_list[2], NTF=NTF_list[2])
+plotSNR!(plot, snrinfo, dsm_list[2], color=color_list[2])
 	set(plot, xyaxes=set(xmin=-100, xmax=0, ymin=0, ymax=120))
 push!(ioplotc, plot)
 
