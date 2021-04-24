@@ -1,6 +1,6 @@
 name = "RSDeltaSigmaPort"
 uuid = "82f5f448-8efd-4819-9fe6-b2df6cfcafec"
-version = "0.1.0"
+version = "0.2.0"
 
 [deps]
 CMDimData = "70385e83-f223-47f4-874b-539892411e49"
