@@ -8,15 +8,19 @@ UPDATE: Much better in Julia 1.6 - especially using Revise.jl.
 Maybe ok to depend on ControlSystems.jl.
 =#
 
-_ss(A,B,C,D,Ts=1) = ControlSystems.ss(A,B,C,D,Ts)
+_ss(A,B,C,D) = ControlSystems.ss(A,B,C,D) #Ts=0.0 default: continuous-time system
+_ss(A,B,C,D,Ts) = ControlSystems.ss(A,B,C,D,Ts)
 
 function _zpk(sys::ControlSystems.StateSpace)
 	H=ControlSystems.zpk(sys)
 	z, p, k = ControlSystems.zpkdata(H)
-	Ts = sys.Ts #Does not get ported over in zpk() for some reason
-	#VERIFYME Not sure why data is on 2nd index
-	#when StateSpace constructed with _ss() function
-	z=z[2][:]; p=p[2][:]; k=k[2]
+
+	#Cannot access sys.Ts for continuous time:
+	#(use sys because Ts does not get ported over in zpk() for some reason)
+	Ts = isdiscrete(sys) ? sys.Ts : 0.0
+
+	#VERIFYME: Sometimes data is on 1st index, other times at 2nd index.
+	z=z[end][:]; p=p[end][:]; k=k[end] #VERY CONCERNED!
 #	map(display, [z, p, k])
 	return _zpk(z, p, k, Ts)
 end
@@ -40,21 +44,21 @@ end
 
 _tf(num, den, ts) = ControlSystems.tf(num, den, ts)
 
-function _impulse(sys, Tfinal::Real)
-	y, t, x = ControlSystems.impulse(sys, Float64(Tfinal))
-	return y
-end
-
 function _minreal(tf::ZPKData, tol)
 	tf = ControlSystems.zpk(tf.z, tf.p, tf.k, tf.Ts)
 	mrtf = ControlSystems.minreal(tf, tol)
 	z, p, k = ControlSystems.zpkdata(mrtf)
 	z=z[1][:]; p=p[1][:]; k=k[1]
-	Ts = mrtf.Ts
+	#Cannot access mrtf.Ts for continuous time:
+	Ts = isdiscrete(mrtf) ? mrtf.Ts : 0.0
 #	map(display, [z, p, k, Ts])
 	return _zpk(z, p, k, Ts)
 end
 
+function _impulse(sys, Tfinal::Real)
+	y, t, x = ControlSystems.impulse(sys, Float64(Tfinal))
+	return y
+end
 
 
 #Last line

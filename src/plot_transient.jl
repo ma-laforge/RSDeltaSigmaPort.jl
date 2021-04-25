@@ -87,4 +87,39 @@ function plotModTransient(inputSig, outputSig; legend::Bool=true, color=:blue)
 end
 
 
+"""`lollipop(x, y, color=:blue, lw::Float64=2.0, ybot=0)`
+
+Plot lollipops (o's and sticks).
+"""
+function plotLollipop(x, y, color=:blue, lw::Float64=2.0, ybot::Float64=0.0, label="", legend=false)
+	plot = cons(:plot, linlin, title = "Time-domain", legend=legend,
+		labels=set(xaxis="Time", yaxis="Amplitude"),
+	)
+	simglyph = cons(:a, glyph=set(shape=:o, size=1.5, color=color, fillcolor=color))
+
+	#Make sure we have column vectors of Float64 (Required by InspectDR):
+	x = Float64.(x[:]); y = Float64.(abs.(y[:]))
+	len = length(x)
+	if length(y) != len
+		error("x & y array lengths must match.")
+	end
+
+	#Generate sticks
+	xsticks = [x'; x'; repeat([NaN], len)']
+	ysticks = [y'; repeat([ybot], len)'; repeat([NaN], len)']
+	xsticks = xsticks[:]; ysticks = ysticks[:] #Need to re-sort as vectors
+
+	#Generate waveforms:
+	values = waveform(x, y)
+	sticks = waveform(xsticks, ysticks)
+
+	push!(plot,
+		cons(:wfrm, sticks, line=set(style=:solid, color=color, width=lw), label=label),
+		cons(:wfrm, values, simglyph, line=set(style=:none, color=color, width=lw), label=label),
+	)
+
+	return plot
+end
+
+
 #Last line

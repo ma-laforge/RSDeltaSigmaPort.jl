@@ -45,6 +45,53 @@ function evalTF(tf,z)
 end
 
 
+"""`H=evalTFP(Hs, Hz, f)`
+
+Compute the value of a transfer function product Hs*Hz at a frequency f,
+where Hs is a cts-time TF and Hz is a discrete-time TF.
+Both Hs and Hz are SISO zpk objects.
+This function attempts to cancel poles in Hs with zeros in Hz.
+"""
+function evalTFP(Hs,Hz,f)
+	(szeros, spoles, sk) = _zpkdata(Hs);
+	(zzeros, zpoles, zk) = _zpkdata(Hz);
+
+	slim = min(1e-3, max(1e-5, eps(1.0)^(1/(1+length(spoles)))))
+	zlim = min(1e-3, max(1e-5, eps(1.0)^(1/(1+length(zzeros)))))
+
+	H = zeros(size(f))
+	w = 2*pi*f;	s = j*w;	z=exp.(s)
+	for i in 1:length(f)
+		wi = w[i];	si = s[i];	zi = z[i]
+		cancel = false
+		if !isempty(spoles)
+			cancel = abs.(si .- spoles) .< slim
+		end
+		if !any(cancel)
+			#wi is far from a pole, so just use the product Hs*Hz
+			#H[i] = evalTF(Hs,si) * evalTF(Hz,zi);
+			#use evalRPoly directly with z/p/k data, much faster. (David Alldred, Feb 4 2013)
+			H[i] = sk * evalRPoly(szeros,si) ./ evalRPoly(spoles,si) *
+				zk * evalRPoly(zzeros,zi) ./ evalRPoly(zpoles,zi)
+		else
+			#cancel pole(s) of Hs with corresponding zero(s) of Hz
+			cancelz = abs.(zi .- zzeros) .< zlim
+			sumcancel = sum(1*cancel); sumcancelz = sum(1*cancelz)
+			if sumcancelz > sumcancel
+				H[i] = 0.0
+			elseif sumcancelz < sumcancel
+				H[i] = Inf
+			else
+				H[i] = evalRPoly(szeros,si,Hs.k) *
+					zi^sumcancel * evalRPoly(zzeros[.!cancelz],zi,Hz.k) /
+					(evalRPoly(spoles[.!cancel],si,1)*evalRPoly(zpoles,zi,1))
+			end
+		end
+	end
+	return H
+end
+
+
 #==Calculators
 ===============================================================================#
 

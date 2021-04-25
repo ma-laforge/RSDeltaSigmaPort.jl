@@ -231,13 +231,6 @@ function documentNTF(arg1; OSR::Int=64, f0::Float64=0.0, quadrature::Bool=false,
 	return pcoll
 end
 
-function plotExampleSpectrum(dsm::AbstractDSM, NTF=nothing; ampdB=-3.0, ftest=nothing, N=2^12, sizes=nothing)
-	isnothing(NTF) && (NTF = synthesizeNTF(dsm))
-	return plotExampleSpectrum(NTF, OSR=dsm.OSR, M=dsm.M, f0=dsm.f0, quadrature=isquadrature(dsm),
-		ampdB=ampdB, ftest=ftest, N=N, sizes=sizes
-	)
-end
-
 """`documentNTF(dsm, SYS=nothing; frespOnly=true, sizes=nothing)`
 """
 function documentNTF(dsm::AbstractDSM, SYS=nothing; frespOnly::Bool=true, sizes=nothing)

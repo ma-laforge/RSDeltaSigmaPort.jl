@@ -4,6 +4,21 @@
 """Emulates rounding of array indices"""
 array_round(i) = round(Int, i) #VERIFYME
 
+function rat(v::Real, tol::Float64)
+	r=rationalize(Float64(v), tol=tol)
+	return (r.num, r.den)
+end
+
+function squeeze(a)
+	sz = collect(size(a))
+	for i in reverse(keys(sz))
+		if sz[i]<2
+			a = dropdims(a, dims=i)
+		end
+	end
+	return a
+end
+
 #Sort complex poles
 function _cplxpair(a)
 	epstol = 100

@@ -37,6 +37,24 @@ _zpkdata(d::ZPKData) = (d.z, d.p, d.k)
 
 abstract type AbstractDSM; end
 
+"""`RealDSM(;order=3, OSR=16, M=1, f0=0, form=:CRFB, Hinf=1.5, opt=0)`
+
+Describe a real-valued (not quadrature) ΔΣ modulator.
+
+# Inputs
+ - `order`: order of the modulator
+ - `OSR`: oversampling ratio
+ - `M`: Number of quantizer steps (`M=nlev-1`)
+ - `f0`: center frequency (1->fs)
+ - `form`:
+ - `H_inf`: maximum NTF gain
+ - `opt`: flag for optimized zeros\r
+ - `--> opt=0` -> not optimized,
+ - `--> opt=1` -> optimized,
+ - `--> opt=2` -> optimized with at least one zero at band-center,
+ - `--> opt=3` -> optimized zeros (Requires MATLAB6 and Optimization Toolbox),
+ - `--> opt=[z]` -> zero locations in complex form (TODO?)
+"""
 struct RealDSM <: AbstractDSM
 	order::Int
 	OSR::Int
@@ -64,10 +82,6 @@ QuadratureDSM(;order=4, OSR=32, M=1, f0=1/16, form=:PFB, NG=-50, ING=-10) =
 
 #==Accessors
 ===============================================================================#
-
-
-#==Detectors
-===============================================================================#
 isquadrature(::RealDSM) = false
 isquadrature(::QuadratureDSM) = true
 
@@ -80,6 +94,7 @@ function orderinfo(order::Int)
 	isodd = order > 2*order2
 	return (order2, isodd, Δodd)
 end
+orderinfo(dsm::AbstractDSM) = orderinfo(dsm.order)
 
 
 #Sort roots such that real values show up first
@@ -96,21 +111,14 @@ function realfirst(a)
 end
 
 
-#==Converters to make input data uniform
-===============================================================================#
-"""`conv2seriesmatrix2D(x)`
-
-Ensure we have a 2D matrix representing series data (Vector->2×N Array)
-"""
-conv2seriesmatrix2D(x::T) where T =
-	throw(ErrorException("Cannot convert $T to a \"series data matrix\""))
-conv2seriesmatrix2D(x::AbstractVector) = collect(x')
-conv2seriesmatrix2D(x::Array{T, 2}) where T<:Number = x #Assume format is ok.
-
-
 #==Basic frequency calculations/defaults
 ===============================================================================#
 """`(f1, f2) = ds_f1f2(;OSR=64, f0=0, iscomplex=0)`
+
+Deprecated. Use `default_fband()` instead.
+
+# See also:
+[`default_fband`](@ref), [`default_ftest`](@ref)
 """
 function ds_f1f2(;OSR::Int=64, f0::Float64=0, iscomplex::Bool=false)
 	local f1, f2
@@ -129,10 +137,27 @@ function ds_f1f2(;OSR::Int=64, f0::Float64=0, iscomplex::Bool=false)
 	return (f1, f2)
 end
 
+"""`[f1, f2] = default_fband(dsm)`
+
+Compute a default application band (normalized frequency limits) for the given
+ΔΣ modulator.
+
+# See also:
+[`default_ftest`](@ref)
+""" default_fband
+
 default_fband(OSR::Int; f0::Float64=0.0, quadrature::Bool=false) =
 	collect(ds_f1f2(OSR=OSR, f0=f0, iscomplex=quadrature)) #Vector form
 default_fband(dsm::RealDSM) = default_fband(dsm.OSR, f0=dsm.f0, quadrature=false)
 default_fband(dsm::QuadratureDSM) = default_fband(dsm.OSR, f0=dsm.f0, quadrature=false)
+
+"""`default_ftest(dsm)`
+
+Compute a default test (normalized) frequency for the given ΔΣ modulator.
+
+# See also:
+[`default_fband`](@ref)
+""" default_ftest
 
 function default_ftest(OSR::Int; f0::Float64=0, quadrature::Bool=false)
 	if quadrature
@@ -143,33 +168,5 @@ function default_ftest(OSR::Int; f0::Float64=0, quadrature::Bool=false)
 end
 default_ftest(dsm::RealDSM) = default_ftest(dsm.OSR, f0=dsm.f0, quadrature=false)
 default_ftest(dsm::QuadratureDSM) = default_ftest(dsm.OSR, f0=dsm.f0, quadrature=true)
-
-
-#==Signal generators
-===============================================================================#
-"""`genTestTone_sin()`
-
-Limiation:
-If N is small relative to ftest (you don't generate a whole period), iftest gets rounded to nothing.
-Typical ampdB: -3dB
-"""
-function genTestTone_sin(ampdB::Float64, ftest::Float64; M::Int=1, phi0::Float64=0.0, N::Int=2^12)
-	amp = undbv(ampdB) #Test tone amplitude, relative to full-scale.
-	iftest = round(Int, ftest*N)
-	u = amp*M*sin.((2π/N)*iftest * (0:N-1) .+ phi0)
-	return (u, iftest)
-end
-
-function genTestTone_quad(ampdB::Float64, ftest::Float64; M::Int=1, phi0::Float64=0.0, N::Int=2^12)
-	amp = undbv(ampdB) #Test tone amplitude, relative to full-scale.
-	iftest = round(Int, ftest*N)
-	u = amp*M*exp.((2π*j/N)*iftest * (0:N-1) .+ phi0)
-	return (u, iftest)
-end
-
-genTestTone(dsm::RealDSM, ampdB::Float64, ftest::Float64; phi0::Float64=0.0, N::Int=2^12) =
-	genTestTone_sin(ampdB, ftest, M=dsm.M, phi0=phi0, N=N)
-genTestTone(dsm::QuadratureDSM, ampdB::Float64, ftest::Float64; phi0::Float64=0.0, N::Int=2^12) =
-	genTestTone_quad(ampdB, ftest, M=dsm.M, phi0=phi0, N=N)
 
 #Last line

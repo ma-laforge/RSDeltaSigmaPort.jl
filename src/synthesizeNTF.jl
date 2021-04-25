@@ -161,33 +161,31 @@ function synthesizeNTF0(order::Int, OSR::Int, opt, H_inf::Float64, f0::Float64)
 end
 
 
-"""`ntf = synthesizeNTF(order=3,osr=64,opt=0,H_inf=1.5,f0=0)`
+"""`NTF = synthesizeNTF(order=3, OSR=64, opt=0, H_inf=1.5, f0=0)`
+
 Synthesize a noise transfer function for a delta-sigma modulator.
-	order =	order of the modulator
-	osr =	oversampling ratio
-	opt =	flag for optimized zeros
-		0 -> not optimized,
-		1 -> optimized, 
-		2 -> optimized with at least one zero at band-center
-		3 -> optimized zeros (Requires MATLAB6 and Optimization Toolbox)
-       [z] -> zero locations in complex form
-	H_inf =	maximum NTF gain
-	f0 =	center frequency (1->fs)
 
-ntf is a zpk object containing the zeros and poles of the NTF. See zpk.m
+# Inputs
+ - `order`: order of the modulator
+ - `OSR`: oversampling ratio
+ - `opt`: flag for optimized zeros\r
+ - `--> opt=0` -> not optimized,
+ - `--> opt=1` -> optimized,
+ - `--> opt=2` -> optimized with at least one zero at band-center,
+ - `--> opt=3` -> optimized zeros (Requires MATLAB6 and Optimization Toolbox),
+ - `--> opt=[z]` -> zero locations in complex form (TODO?)
+ - `H_inf`: maximum NTF gain
+ - `f0`: center frequency (1->fs)
 
- See also 
-  clans()   "Closed-loop analysis of noise-shaper." An alternative
-            method for selecting NTFs based on the 1-norm of the 
-            impulse response of the NTF
+# Output
+`NTF` is a `_zpk` object containing the zeros and poles of the NTF
+(See [`_zpk`](@ref)).
 
-  synthesizeChebyshevNTF()    Select a type-2 highpass Chebyshev NTF.
-            This function does a better job than synthesizeNTF if osr
-            or H_inf is low.
+# Note
 
- This is actually a wrapper function which calls either the 
- appropriate version of synthesizeNTF based on the availability
- of the 'fmincon' function from the Optimization Toolbox
+This is actually a wrapper function which calls either the 
+appropriate version of `synthesizeNTF` based on the availability
+of the `fmincon` function from the Optimization Toolbox
 """
 function synthesizeNTF(order::Int=3, osr::Int=64; opt=0, H_inf::Float64=1.5, f0::Float64=0.0)
 	if f0 > 0.5
@@ -212,6 +210,25 @@ function synthesizeNTF(order::Int=3, osr::Int=64; opt=0, H_inf::Float64=1.5, f0:
 		return synthesizeNTF0(order,osr,opt,H_inf,f0)
 	end
 end
+
+"""`NTF = synthesizeNTF(dsm)`
+
+Synthesize a noise transfer function for a ΔΣ modulator.
+
+# Output
+`NTF` is a `_zpk` object containing the zeros and poles of the NTF
+(See [`_zpk`](@ref)).
+
+# See also:
+ - `dsm` types: [`RealDSM`](@ref), [`QuadratureDSM`](@ref)
+ - [`clans()`](@ref): "Closed-loop analysis of noise-shaper." An alternative
+   method for selecting NTFs based on the 1-norm of the impulse
+   response of the NTF.
+ - [`synthesizeChebyshevNTF`](@ref): Select a type-2 highpass Chebyshev NTF.
+   This function does a better job than `synthesizeNTF` if `OSR` or `H_inf`
+   is low.
+ - [`_zpk`](@ref)
+""" synthesizeNTF
 
 synthesizeNTF(dsm::RealDSM) =
 	synthesizeNTF(dsm.order, dsm.OSR, opt=dsm.opt, H_inf=dsm.Hinf, f0=dsm.f0)
