@@ -16,10 +16,11 @@
 
 The following high-level functionnality has (at least partially) been ported:
  - `evalTF`
- - `synthesizeNTF`, `realizeNTF`
+ - `synthesizeNTF`, `realizeNTF`, `realizeNTF_ct`
  - `stuffABCD`, `scaleABCD`, `mapABCD`
  - `calculateSNR`, `peakSNR`, `predictSNR`
  - `simulateDSM`, `simulateSNR`
+ - `documentNTF`, `plotExampleSpectrum`
 
 And demos:
  - `dsdemo1`, `dsdemo2`, `dsdemo3` `dsexample1`
@@ -33,7 +34,11 @@ And demos:
     1. [Sample directory w/plain `.jl` files (`sample/`)](sample/)
  1. [Plotting](#Plotting)
  1. [Installation](#Installation)
+ 1. [Julia tips](doc/juliatips.md)
+    1. [Useful functions](doc/juliatips.md#FunctionLibraries)
+    1. [`linspace()` & `logspace()`](doc/juliatips.md#LinLogSpace)
  1. [Known limitations](#KnownLimitations)
+    1. [TODO](doc/todo.md)
 
 
 <a name="Description"></a>
@@ -51,6 +56,13 @@ This module tries to remain true to the original Delta Sigma Toolbox while confo
  - Returning `NamedTuple`s instead of simple arrays when multiple values are returned.
  - ...
 
+Progressively replacing modulator parameters in function calls with `RealDSM` and `QuadratureDSM` objects:
+ - Simplifies function interface for user.
+ - Centralizes defaults for parameter values on construction of `RealDSM` and `QuadratureDSM`.
+ - Looking to keep "original" function interface (with individual modulator parameters) available for accustomed users.
+ - Looking to remove default values from said interface to avoid unexpected bugs from inconsistent defaults.
+ - Might change with time (not sure if certain parameters, like `opt`, should migrate to a NTF structure or something).
+
 <a name="Plotting"></a>
 ## Plotting
 `RSDeltaSigmaPort.jl` uses [CMDimData.jl/EasyPlot][CMDimDataJL] to handle plotting.
@@ -60,18 +72,20 @@ functions found in `plot_*.jl` files in the source directory:
 
 <a name="Installation"></a>
 ## Installation
-`RSDeltaSigmaPort.jl` is not yet registered with Julia's **General** registry.
-It can nonetheless be installed using the library's URL from Julia's built-in package manager:
+`RSDeltaSigmaPort.jl` is registered with Julia's **General** registry.
+It can be installed using Julia's built-in package manager:
 
 ```julia-repl
 julia> ]
-pkg> add https://github.com/ma-laforge/RSDeltaSigmaPort.jl
+pkg> add RSDeltaSigmaPort
 ```
 
 <a name="KnownLimitations"></a>
 ## Known limitations
 Functions that are not supported:
  - `printmif()`
+
+### [TODO](doc/todo.md)
 
 ### Compatibility
 
