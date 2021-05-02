@@ -123,7 +123,7 @@ orth(A) = LinearAlgebra.svd(A).U
 function poly(rA)
 	result = [1]
 	for r in rA
-		result = conv(result, [1, r])
+		result = conv(result, [1, -r])
 	end
 	return result
 end
