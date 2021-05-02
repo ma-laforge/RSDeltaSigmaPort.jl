@@ -16,14 +16,14 @@ conv2seriesmatrix2D(x::Array{T, 2}) where T<:Number = x #Assume format is ok.
 
 #==Array/Vector padding
 ===============================================================================#
-"""`y = padb(x, n, val)`
+"""`y = padl(x, n, val)`
 
-Pad a matrix x on the bottom to length n with value val(0)
-The empty matrix is assumed to be have 1 empty column
+Pad a matrix x on the left to length n with value val(0)
+The empty matrix is assumed to be have 1 empty row
 """
-padb(x, n::Int, val=0) =
-	[ x ; val*ones(n-size(x,1), max(1,size(x,2))) ]
-
+padl(x, n::Int, val=0) =
+	[ val*ones(eltype(x), max(1,size(x,1)), n-size(x,2)) x ]
+padl(x::Vector, n::Int, val=0) = vcat(val*ones(eltype(x), n-length(x)), x)
 
 """`y = padr(x, n, val)`
 
@@ -31,8 +31,27 @@ Pad a matrix x on the right to length n with value val(0)
 The empty matrix is assumed to be have 1 empty row
 """
 padr(x, n::Int, val=0) =
-	[ x val*ones(max(1,size(x,1)), n-size(x,2)) ]
-padr(x::Vector, n::Int, val=0) = vcat(x, val*ones(n-length(x)))
+	[ x val*ones(eltype(x), max(1,size(x,1)), n-size(x,2)) ]
+padr(x::Vector, n::Int, val=0) = vcat(x, val*ones(eltype(x), n-length(x)))
+
+"""`y = padt(x, n, val)`
+
+Pad a matrix x on the top to length n with value val(0)
+The empty matrix is assumed to be have 1 empty column
+"""
+padt(x, n::Int, val=0) =
+	[ val*ones(eltype(x), n-size(x,1), max(1,size(x,2))); x ]
+padt(x::Vector, n::Int, val=0) = padl(x,n,val)
+
+
+"""`y = padb(x, n, val)`
+
+Pad a matrix x on the bottom to length n with value val(0)
+The empty matrix is assumed to be have 1 empty column
+"""
+padb(x, n::Int, val=0) =
+	[ x ; val*ones(eltype(x), n-size(x,1), max(1,size(x,2))) ]
+padb(x::Vector, n::Int, val=0) = padr(x,n,val)
 
 
 #==Quadrature <--> real

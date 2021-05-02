@@ -46,15 +46,18 @@ function impL1(ntf::ZPKData, n::Int=10)
 
 	lf_den = padr(poly(z), length(p)+1)
 	lf_num = lf_den .- poly(p)
-	if any(imag.([lf_num, lf_den]) .!= 0)
+	if any(imag.(vcat(lf_num, lf_den)) .!= 0)
 		#Complex loop filter
 		lfr_den = real.( conv(lf_den, conj.(lf_den)) )
 		lfr_num = conv(lf_num, conj.(lf_den))
-		lf_i = _tf(real(lfr_num), lfr_den, 1)
-		lf_q = _tf(imag(lfr_num), lfr_den, 1)
-		y = _impulse(lf_i, n) .+ j * _impulse(lf_q, n)
+		lf_i = _tf(real.(lfr_num), lfr_den, 1)
+		lf_q = _tf(imag.(lfr_num), lfr_den, 1)
+		(yi,) = _impulse(lf_i, n)
+		(yq,) = _impulse(lf_q, n)
+		y = yi .+ j*yq
 	else
-		y = _impulse(_tf(lf_num, lf_den, 1), n)
+		lf_num = real.(lf_num); lf_den = real(lf_den)
+		(y,) = _impulse(_tf(lf_num, lf_den, 1), n)
 	end
 	return y
 end
@@ -62,7 +65,7 @@ end
 
 #==pulse
 ===============================================================================#
-"""`y = pulse(S, tp=[0 1], dt=1, tfinal=10, nosum=0)`
+"""`y = pulse(S, tp=[0 1], dt=1, tfinal=10, nosum=true)`
 
 Calculate the sampled pulse response of a ct system. `tp` may be an array of
 pulse timings, one for each input.
@@ -93,7 +96,15 @@ function pulse(S, tp=[0 1], dt::Float64=1.0, tfinal::Float64=10.0, nosum::Bool=f
 	(x, df) = rat(tfinal,1e-3)
 	delta_t = 1 / lcm( dd, lcm(ddt,df) )
 	delta_t = max(1e-3, delta_t) #Put a lower limit on delta_t
-	(y1,) = step(S, 0:delta_t:tfinal)
+	(y1, ty1, xy1) = step(S, 0:delta_t:tfinal)
+
+#= #DEBUG
+	p=cons(:plot, title="")
+	for i in 1:size(y1, 3)
+	push!(p, cons(:wfrm, waveform(collect(ty1[:]), y1[:,1,i])))
+	end
+	displaygui(p)
+=#
 
 	nd = round(Int, dt/delta_t)
 	nf = round(Int, tfinal/delta_t)
@@ -111,6 +122,7 @@ function pulse(S, tp=[0 1], dt::Float64=1.0, tfinal::Float64=10.0, nosum::Bool=f
 	else
 		y = zeros(array_round(tfinal/dt+1),size(S.C,1),ni)
 	end
+
 	for i = 1:ndac
 		n1 = round(Int, tp[i,1]/delta_t)
 		n2 = round(Int, tp[i,2]/delta_t)

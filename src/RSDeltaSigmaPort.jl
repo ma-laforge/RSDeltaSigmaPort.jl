@@ -14,6 +14,7 @@ module RSDeltaSigmaPort
 #=Flags:
 	-TODO
 	-VERIFYME: is this the correct behaviour???
+   -VERSIONSWITCH: Algorithm originally depends on software version (Needs to be checked)
    -NEEDSTOOLKIT
 	-REQUESTHELP
 =#
@@ -21,7 +22,7 @@ module RSDeltaSigmaPort
 import Random
 import Statistics: mean
 import LinearAlgebra
-import LinearAlgebra: norm, diagm, eigen
+import LinearAlgebra: norm, diagm, eigen, cond
 import SpecialFunctions: erfinv
 import Interpolations
 import FFTW: fft, fftshift
@@ -66,6 +67,7 @@ include("snr.jl")
 include("optimize.jl")
 include("transferfunctions.jl")
 include("statespace.jl")
+include("mapCtoD.jl")
 include("windowing.jl")
 include("synthesizeNTF.jl")
 include("quantizer.jl")
@@ -107,7 +109,7 @@ export isquadrature
 #Signal generators:
 export ds_f1f2, default_ftest, default_fband
 export genTestTone, genTestTone_quad, genTestTone_sin
-export impL1
+export pulse, impL1
 
 #Windowing:
 export ds_hann
@@ -122,6 +124,7 @@ export synthesizeNTF, realizeNTF, realizeNTF_ct
 
 #State space:
 export stuffABCD, scaleABCD, mapABCD, partitionABCD
+export mapCtoD
 
 #Simulations:
 export simulateDSM, simulateSNR

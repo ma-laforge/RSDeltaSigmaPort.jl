@@ -40,22 +40,23 @@ Realize a NTF with a continuous-time loop filter.
    If this argument is omitted, ABCDc is constructed according to `form`.
 """
 function realizeNTF_ct(ntf, form=:FB, tdac=[0 1], ordering=1:0, bp=Int[], ABCDc=Float64[])
-	(ntf_z, ntf_p) = _zpkdata(ntf)
-	ntf_p = deepcopy(ntf_p); ntf_z = deepcopy(ntf_z) #Don't modify original
+	(ntf_z, ntf_p) = _zpkdata(ntf, 1)
+	ntf_z = deepcopy(ntf_z); ntf_p = deepcopy(ntf_p) #Don't modify original
 	ntf_z = realfirst(ntf_z); ntf_p = realfirst(ntf_p) #VERIFYME: Expected by realizeNTF... here too?
 	ntf_z_orig = deepcopy(ntf_z) #VERIFYME: Doesn't get modified to match legacy code. Intentional or omission??
 	order = length(ntf_p)
 	(order2, isodd, Δodd) = orderinfo(order)
 	if isempty(ordering); ordering = 1:order2; end
-	if isempty(bp); bp = zeros(Int, 1, order2); end
+	if isempty(bp); bp = zeros(Int, order2); end
 
 	#compensate for limited accuracy of zero calculation
 	ntf_z[findall( abs.(ntf_z .- 1) .< eps(1.0)^(1/(1+order)) )] .= 1.0
+#ntf_z_orig=ntf_z #???
 
 	multi_tmg = (eltype(tdac)<:Array)
 	if multi_tmg
-		if size(tdac) != (order+1, 1)
-			error("For multi-array tdac, size(tdac) must be (order+1, 1)")
+		if size(tdac) != (order+1,)
+			error("For multi-array tdac, tdac be a vector of length `order+1`")
 		end
 		if form != :FB
 			error("Currently only supporting form=:FB for multi-array tdac")
@@ -69,6 +70,7 @@ function realizeNTF_ct(ntf, form=:FB, tdac=[0 1], ordering=1:0, bp=Int[], ABCDc=
 
 	n_direct = 0
 	n_extra = 0
+	tdac2 = Float64[-1 -1]
 	if !multi_tmg
 		#Need direct terms for every interval of memory in the DAC
 		n_direct = ceil(Int, tdac[2]) - 1
@@ -77,7 +79,7 @@ function realizeNTF_ct(ntf, form=:FB, tdac=[0 1], ordering=1:0, bp=Int[], ABCDc=
 		else
 			n_extra = n_direct
 		end
-		tdac2 = [ -1 -1; 
+		tdac2 = Float64[ -1 -1; 
 			tdac;
 			0.5*ones(n_extra,1)*[-1 1] .+ cumsum(ones(n_extra,2), dims=1)
 		]
@@ -106,6 +108,7 @@ function realizeNTF_ct(ntf, form=:FB, tdac=[0 1], ordering=1:0, bp=Int[], ABCDc=
 	end
 
 	Ac = ABCDc[1:order, 1:order]
+	local Bc, Cc, Dc, tp
 
 	if :FB == form
 		Cc = ABCDc[[order+1],1:order]
@@ -115,9 +118,9 @@ function realizeNTF_ct(ntf, form=:FB, tdac=[0 1], ordering=1:0, bp=Int[], ABCDc=
 			tp = repeat(tdac,order+1,1)
 		else	#Assemble tdac2, Bc and Dc
 			tdac2 = Float64[-1 -1]
-			Bc = Float64[]
-			Dc = Float64[]
+			Bc = ones(order, 0) #0-column
 			Bci = [eye(order) zeros(order,1)]
+			Dc = ones(1, 0)
 			Dci = [zeros(1,order) 1]
 			for i in 1:length(tdac)
 				tdi = tdac[i]
@@ -167,13 +170,14 @@ function realizeNTF_ct(ntf, form=:FB, tdac=[0 1], ordering=1:0, bp=Int[], ABCDc=
 	if norm(yy*x - y) > 1e-4
 		@warn("Pulse response fit is poor.")
 	end
+	local Bc2, Dc2
 	if :FB == form
 		if !multi_tmg
 			Bc2 = [ x[1:order] zeros(order,n_extra) ]
 			Dc2 = x[order+1:end]'
 		else
 			BcDc = [Bc; Dc]
-			i = any(BcDc .!= 0)
+			i = findall(BcDc .!= 0)
 			BcDc[i] = x
 			Bc2 = BcDc[1:end-1,:]
 			Dc2 = BcDc[[end],:]
@@ -190,17 +194,18 @@ function realizeNTF_ct(ntf, form=:FB, tdac=[0 1], ordering=1:0, bp=Int[], ABCDc=
 	Dc = [Dc1 Dc2]
 	Bc1 = [1; zeros(order-1,1)]
 	Bc = [Bc1 Bc2]
+
 	#Scale Bc1 for unity STF magnitude at f0
 	fz = angle.(ntf_z_orig)/(2π)
 	f1 = fz[1]
-	ibz = abs.(fz .- f1) .<= abs.(fz .+ f1)
+	ibz = findall(abs.(fz .- f1) .<= abs.(fz .+ f1))
 	fz = fz[ibz]
 	f0 = mean(fz)
 	if minimum(abs.(fz)) < 3*minimum(abs.(fz .- f0))
 		f0 = 0
 	end
 	L0c = _zpk(_ss(Ac,Bc1,Cc,Dc1))
-	G0 = evalTFP(L0c,ntf,f0)
+	G0 = evalTFP(L0c, ntf, f0)
 	Bc[:,1] = Bc[:,1]/abs.(G0)
 
 	ABCDc = [Ac Bc; Cc Dc]

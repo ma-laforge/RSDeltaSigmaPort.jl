@@ -131,14 +131,14 @@ plotNTF(NTF::ZPKData, args...; f0=0, kwargs...) =
 
 #==documentNTF
 ===============================================================================#
-"""`plot = documentNTF(NTF|ABCD|mod_struct; OSR=64, f0=0, quadrature=false, frespOnly=true, sizes=nothing)`
+"""`plot = documentNTF(NTF|ABCD|mod_struct; OSR=64, f0=0, quadrature=false, frespOnly=false, sizes=nothing)`
 
 The first argument is either the NTF, ABCD matrix or a struct containing 
 NTF, OSR=64, f0=0, quadrature=0 and optionally stf. 
 If the first argument is a struct, then no other arguments should be supplied.
 If the first argument is ABCD, the stf is also plotted.
 """
-function documentNTF(arg1; OSR::Int=64, f0::Float64=0.0, quadrature::Bool=false, frespOnly::Bool=true, sizes=nothing)
+function documentNTF(arg1; OSR::Int=64, f0::Float64=0.0, quadrature::Bool=false, frespOnly::Bool=false, sizes=nothing)
 	STF=nothing
 	local NTF
 	if isa(arg1, ZPKData)
@@ -231,9 +231,9 @@ function documentNTF(arg1; OSR::Int=64, f0::Float64=0.0, quadrature::Bool=false,
 	return pcoll
 end
 
-"""`documentNTF(dsm, SYS=nothing; frespOnly=true, sizes=nothing)`
+"""`documentNTF(dsm, SYS=nothing; frespOnly=false, sizes=nothing)`
 """
-function documentNTF(dsm::AbstractDSM, SYS=nothing; frespOnly::Bool=true, sizes=nothing)
+function documentNTF(dsm::AbstractDSM, SYS=nothing; frespOnly::Bool=false, sizes=nothing)
 	isnothing(SYS) && (SYS = synthesizeNTF(SYS))
 	return documentNTF(SYS; OSR=dsm.OSR, f0=dsm.f0, quadrature=false, frespOnly=frespOnly, sizes=sizes)
 end

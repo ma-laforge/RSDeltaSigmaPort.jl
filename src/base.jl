@@ -23,17 +23,32 @@ DS(v::Symbol) = DS{v}()
 Custom structure to store zpk data.
 """
 mutable struct ZPKData
-	z::Union{Float64, Vector{Float64}, Vector{Complex{Float64}}}
-	p::Union{Float64, Vector{Float64}, Vector{Complex{Float64}}}
-	k::Real
+	z
+	p
+	k
 	Ts::Real
 end
 
-function _zpk(z, p, k::Number, Ts::Number)
+function _zpk(z, p, k, Ts::Number)
 	ZPKData(z, p, k, Ts)
 end
 
-_zpkdata(d::ZPKData) = (d.z, d.p, d.k)
+function _zpkdata(d::ZPKData, idx=0)
+	accesspz(v::Array, idx) = v[idx]
+	accesspz(v::Array{T}, idx) where T<:Number =
+		(if idx != 1; throw("no data at given index"); end; return v)
+	accessk(v::Array, idx) = v[idx]
+	accessk(v::Number, idx) =
+		(if idx != 1; throw("no data at given index"); end; return v)
+
+	(z, p, k) = (d.z, d.p, d.k)
+	if idx > 0
+		z = accesspz(z, idx)
+		p = accesspz(p, idx)
+		k = accessk(k, idx)
+	end
+	return (z, p, k)
+end
 
 abstract type AbstractDSM; end
 
@@ -78,6 +93,16 @@ struct QuadratureDSM <: AbstractDSM
 end
 QuadratureDSM(;order=4, OSR=32, M=1, f0=1/16, form=:PFB, NG=-50, ING=-10) =
 	QuadratureDSM(order, OSR, M, f0, form, NG, ING)
+
+
+"""`CTDTPrefilters`
+
+The mixed CT/DT prefilters which form the samples.
+"""
+mutable struct CTDTPrefilters
+	Hs #TODO Type should be transfer function
+	Hz #TODO Type should be transfer function
+end
 
 
 #==Accessors

@@ -105,8 +105,8 @@ function plotLollipop(x, y, color=:blue, lw::Float64=2.0, ybot::Float64=0.0, lab
 	end
 
 	#Generate sticks
-	xsticks = [x'; x'; repeat([NaN], len)']
-	ysticks = [y'; repeat([ybot], len)'; repeat([NaN], len)']
+	xsticks = [x'; x'; fill(NaN, (1,len))]
+	ysticks = [y'; fill(ybot, (1,len)); fill(NaN, (1,len))]
 	xsticks = xsticks[:]; ysticks = ysticks[:] #Need to re-sort as vectors
 
 	#Generate waveforms:

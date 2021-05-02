@@ -53,8 +53,8 @@ Both Hs and Hz are SISO zpk objects.
 This function attempts to cancel poles in Hs with zeros in Hz.
 """
 function evalTFP(Hs,Hz,f)
-	(szeros, spoles, sk) = _zpkdata(Hs);
-	(zzeros, zpoles, zk) = _zpkdata(Hz);
+	(szeros, spoles, sk) = _zpkdata(Hs, 1)
+	(zzeros, zpoles, zk) = _zpkdata(Hz, 1)
 
 	slim = min(1e-3, max(1e-5, eps(1.0)^(1/(1+length(spoles)))))
 	zlim = min(1e-3, max(1e-5, eps(1.0)^(1/(1+length(zzeros)))))
@@ -92,6 +92,31 @@ function evalTFP(Hs,Hz,f)
 end
 
 
+"""`evalMixedTF(tf,f, df=1e-5)`
+
+Compute the mixed transfer function tf at a frequency f.
+tf is a struct array with fields Hs and Hz wich represent 
+a continuous-time/discrete-time tfs which must be multiplied together
+and then added up.
+"""
+function evalMixedTF(tf::CTDTPrefilters, f; df=1e-5)
+	H = zeros(size(f))
+	for i = 1:length(tf)
+		H = H + evalTFP(tf[i].Hs, tf[i].Hz, f)
+	end
+
+	err = findall(isnan.(H) .| isinf.(H))
+	if !isempty(err)
+		#Need to fill in the holes. !! Use a "nearby" frequency point
+		for i in err
+			H[i] = evalMixedTF(tf, f[i] .+ df, df=df*10)
+		end
+	end
+	return H
+end
+
+
+
 #==Calculators
 ===============================================================================#
 
@@ -118,13 +143,13 @@ function powerGain(num, den, Nimp0::Int=100)
 	unstable = false
 
 	sys = _tf(num,den,1)
-	imp = _impulse(sys, Nimp)
+	(imp,) = _impulse(sys, Nimp)
 	if sum(abs.(imp[Nimp-10:Nimp])) < 1e-8 && Nimp > 50 #Use fewer samples.
 		Nimp = round(Int, Nimp/1.3)
 	else
 		while sum(abs.(imp[Nimp-10:Nimp])) > 1e-6
 			Nimp = Nimp*2
-			imp = _impulse(sys, Nimp)
+			(imp,) = _impulse(sys, Nimp)
 			if sum(abs.(imp[Nimp-10:Nimp])) >= 50 || Nimp >= 1e4
 				#H is close to being unstable
 				unstable = true

@@ -157,6 +157,7 @@ function plotExampleSpectrum(NTF; OSR::Int=64, M::Int=1, f0::Float64=0, quadratu
 			cons(:atext, nbwstr, x=0.5, y=-135, align=:cr),
 		)
 	else
+		error("plotExampleSpectrum not implemented for quadrature modulators.")
 #=
 		spec0 = fftshift(spec0/2)
 		freq = range(-0.5, stop=0.5, length=N+1)
