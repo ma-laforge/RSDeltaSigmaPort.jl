@@ -12,7 +12,7 @@ p = exp.((2*pi*im/7) .* collect(0:6))
    0.6234898018587334 - 0.7818314824680299im
 =#
 
-@testset "cplxpair" begin show_testset_description()
+@testset "cplxpair()" begin show_testset_description()
 	rtol = 1e-12
 
 	pA = exp.((2*pi*im/7) .* collect(0:6))
@@ -29,6 +29,9 @@ p = exp.((2*pi*im/7) .* collect(0:6))
 		@test pA[6] ≈ p       rtol = rtol
 	p = 1.0 + 0.0im
 		@test pA[7] ≈ p rtol = rtol
+end
+@testset "poly()" begin show_testset_description()
+	@test RSDeltaSigmaPort.poly([3,4,5]) == [1, -12, 47, -60]
 end
 
 end

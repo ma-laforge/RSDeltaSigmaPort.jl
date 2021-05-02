@@ -14,7 +14,7 @@ function show_testset_description()
 	@info "Testing: " * Test.get_testset().description
 end
 
-testfiles = ["mlfunc.jl"]
+testfiles = ["mlfunc.jl", "arrays.jl"]
 
 for testfile in testfiles
 	include(testfile)
