@@ -130,7 +130,7 @@ export mapCtoD
 export simulateDSM, simulateSNR
 
 #Plotting:
-export wfrm_stairs, waveform
+export wfrm_stairs, waveform, logsmooth
 export plotSpec, plotSpec!
 export plotPZ, plotPZ!, plotNTF, plotNTF!
 export plotModTransient, plotModSpectrum, plotModSpectrum!
