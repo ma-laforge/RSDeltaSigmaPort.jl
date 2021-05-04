@@ -51,6 +51,11 @@ Unfortunately, harmonics above the nth appear smaller than they
 really are because their energy is averaged over many bins.
 """
 function logsmooth(X, inBin; nbin::Int=8, n::Int=3)
+#= Comment (MALaforge): VERIFYME
+ - Goes infinite @inBin because startbin[] values jump back on 1st iteration of
+   `for i in 1:n`.
+ - Was this ententional to help user locate inBin?
+=#
 	N=length(X); N2=div(N,2)
 	f1 = mod(inBin-1, nbin) + 1
 	startbin = vcat(f1:nbin:inBin-1, inBin:inBin+2)

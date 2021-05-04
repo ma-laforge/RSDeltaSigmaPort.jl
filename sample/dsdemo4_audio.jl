@@ -1,4 +1,5 @@
 #dsdemo4_audio.jl: A GUI-based demonstration of delta-sigma with sound (Currently GUI-less).
+using RSDeltaSigmaPort
 
 @warn("dsdemo4_audio requires additional libraries:\n - MAT.jl\n - WAV.jl")
 
@@ -22,7 +23,7 @@ using RSDeltaSigmaPort.EasyPlot #set, cons
 using RSDeltaSigmaPort: fft
 using RSDeltaSigmaPort: linlin, loglin
 import Printf: @sprintf
-using MAT, WAV
+import MAT, WAV
 
 
 #==Constants
@@ -43,8 +44,9 @@ abstract type AbstractSource; end
 
 struct SrcRamp <: AbstractSource; end
 
-mutable struct SrcWav <: AbstractSource
-	data::Vector #{Float64}
+mutable struct SrcRaw <: AbstractSource
+	u::Vector #{Float64} #Oversampled signal
+	u0::Vector #{Float64} #Decimated signal
 end
 
 mutable struct SrcSine <: AbstractSource
@@ -101,6 +103,8 @@ function validate(m::Modulator)
 end
 
 function generate(src::SrcSine, m::Modulator; N=10)
+	(src.f > m.fsout/2) &&
+		throw("Source 𝑓 = $(src.f) too high. Must be <= 𝑓ₛout/2.")
 	𝑓ₒₛ = m.fsout*m.OSR
 	𝜔₀ = 2π*src.f
 	tidx = (0:N-1); t = tidx/𝑓ₒₛ
@@ -117,15 +121,16 @@ function generate(src::SrcRamp, m::Modulator; N=10)
 	return (t, u, u0)
 end
 
-function generate(src::SrcWav, m::Modulator; N=10)
+function generate(src::SrcRaw, m::Modulator; N=10)
 	𝑓ₒₛ = m.fsout*m.OSR
-#		load('dsdemo4.mat'); #for sd, ds
-#		u0 = ds;
-#		u = interp(sd,DecFact);
-#		N = length(u);
-	throw(:INCOMPLETE)
+	N = length(src.u)
 	tidx = (0:N-1); t = tidx/𝑓ₒₛ
-	return (t, u, u0)
+	return (t, src.u, src.u0)
+end
+
+function play(data::Vector)
+	WAV.wavplay(data, 𝑓ₛout)
+	return :PLAYBACK_COMLETE
 end
 
 
@@ -142,44 +147,39 @@ function run(m::Modulator; Tsim::Float64=2.0, input=SrcSine(f=500))
 	OSR = m.OSR #Copy for string interpolation
 
 	#Plot signal `u0`
-	tplot = cons(:plot, linlin, title="Decimated Signal (dec=$OSR)", legend=true,
-		#xyaxes=set(xmin=-120, xmax=0, ymin=0, ymax=120),
-		labels=set(xaxis="Time [s]", yaxis="u₀(t)"),
+	plot_tdec = cons(:plot, linlin, title="Decimated Signal (dec=$OSR)", legend=false,
+		xyaxes=set(ymin=-1, ymax=1),
+		labels=set(xaxis="Time [s]", yaxis="u₀(t), w(t)"),
 	)
 
 	N = length(u0)
 	t = (0:N-1)/𝑓ₛout
 	u0w = waveform(t, u0)
-	push!(tplot,
+	push!(plot_tdec,
 		cons(:wfrm, u0w, line=set(style=:solid, color=:blue, width=2), label="u₀"),
 	)
 
-	#Plot U(f), from 0 to 𝑓ₛout/2
-	𝑓plot = cons(:plot, linlin, title="Spectrum (dec=$OSR)", legend=true,
+	#Plot U(𝑓), from 0 to 𝑓ₛout/2
+	plot_𝑓dec = cons(:plot, linlin, title="Spectrum (dec=$OSR)", legend=false,
 		xyaxes=set(xmin=0, xmax=𝑓ₛout/2, ymin=-160, ymax=0),
-		labels=set(xaxis="Frequency [Hz]", yaxis="U₀(𝑓)"),
+		labels=set(xaxis="Frequency [Hz]", yaxis="U₀(𝑓), W(𝑓)"),
 	)
 
-	if typeof(input) in [SrcSine, SrcWav]
+	if typeof(input) in [SrcSine, SrcRaw]
 		N = length(u0)
 		local U
 		if isa(input, SrcSine)
 			U = fft(u0)/(N/4)
-		else #SrcWav
+		else #SrcRaw
 			U = fft(u0 .* ds_hann(N))/(N/4)
 		end
 		𝑓 = range(0, stop=𝑓ₛout, length=N+1); 𝑓 = 𝑓[1:div(N,2)+1]
 		UdB = dbv.(U[keys(𝑓)])
 		UdBw = waveform(𝑓, UdB)
-		push!(𝑓plot,
+		push!(plot_𝑓dec,
 			cons(:wfrm, UdBw, line=set(style=:solid, color=:blue, width=2), label="U₀"),
 		)
 	end
-
-	pcoll_in = push!(cons(:plot_collection),
-		tplot, 𝑓plot
-	)
-	displaygui(pcoll_in)
 
 	#Plot ΔΣ signals (time domain):
 	Nplot = 300 #Number of samples to plot
@@ -192,8 +192,8 @@ function run(m::Modulator; Tsim::Float64=2.0, input=SrcSine(f=500))
 		n = floor.(Int, N/2-Nplot/2:N/2+Nplot/2-1)
 	end
 
-	tplot = cons(:plot, linlin, title="Signals @ Modulator Input/Output", legend=true,
-		#xyaxes=set(xmin=-120, xmax=0, ymin=0, ymax=120),
+	plot_tos = cons(:plot, linlin, title="Signals @ Modulator Input/Output", legend=false,
+		xyaxes=set(ymin=-1.2, ymax=1.2),
 		labels=set(xaxis="samples", yaxis="v(t)"),
 	)
 
@@ -201,12 +201,12 @@ function run(m::Modulator; Tsim::Float64=2.0, input=SrcSine(f=500))
 	vw = wfrm_stairs(_x, v[n])
 	uw = waveform(_x, u[n])
 
-	push!(tplot,
+	push!(plot_tos,
 		cons(:wfrm, vw, line=set(style=:solid, color=:blue, width=2), label="v"),
 		cons(:wfrm, uw, line=set(style=:solid, color=:green, width=2), label="u"),
 	)
 
-	#Plot V(f), from 0 to Fs/2. Use the middle Nfft points of v
+	#Plot V(𝑓), from 0 to 𝑓ₒₛ/2. Use the middle Nfft points of v
 	N = length(v)
 	Nfft = min(N, 16*8192)
 	n = array_round((N-Nfft)/2+1):array_round((N+Nfft)/2)
@@ -216,38 +216,112 @@ function run(m::Modulator; Tsim::Float64=2.0, input=SrcSine(f=500))
 		inBin = round(Int, input.f/fos*Nfft+1) #Bin of tone
 	end
 	(𝑓nrm, Vp) = logsmooth(V, inBin)
-	#iinf = findall(isinf.(Vp)) #Appears to be infinite values in certain cases
-	#finf = 𝑓nrm[iinf]; @show(iinf, finf .* fos)
 
-	𝑓plot = cons(:plot, loglin, title="Spectrum (OSR=$OSR)", legend=true,
+	plot_𝑓os = cons(:plot, loglin, title="Spectrum (OSR=$OSR)", legend=false,
 		xyaxes=set(xmin=100, xmax=fos/2, ymin=-160, ymax=0),
 		labels=set(xaxis="Frequency [Hz]", yaxis="V(𝑓)"),
 	)
 
 	Vpw = waveform(𝑓nrm*fos, Vp)
 	nbw_str = @sprintf("NBW = %.1f Hz", fos*1.5/Nfft) #orig. coords: (Fs/2, -90); :cr
-	push!(𝑓plot,
+	push!(plot_𝑓os,
 		cons(:wfrm, Vpw, line=set(style=:solid, color=:blue, width=2), label="V"),
 		cons(:atext, nbw_str, y=-90, reloffset=set(x=0.95), align=:cr),
 	)
 
-	pcoll_mod = push!(cons(:plot_collection),
-		tplot, 𝑓plot
+	#Compute w
+	w = sinc_decimate(v, m.sincorder, m.OSR)
+	filtered_q = sinc_decimate(q, m.sincorder, m.OSR)
+	N = length(w)
+	t = collect(0:N-1)/𝑓ₛout
+	ww = wfrm_stairs(t, w)
+	push!(plot_tdec,
+		cons(:wfrm, ww, line=set(style=:solid, color=:red, width=2), label="w"),
 	)
-	displaygui(pcoll_mod)
 
+	#Plot W(𝑓), from 0 to 𝑓ₛout/2
+	if typeof(input) in [SrcSine, SrcRaw]
+		Nfft = length(w)
+		local W
+		if isa(input, SrcSine)
+			W = fft(w)/(N/4)
+		else
+			W = fft(w.*ds_hann(N))/(N/4)
+		end
+		𝑓 = range(0, stop=𝑓ₛout, length=Nfft+1); 𝑓 = 𝑓[1:div(Nfft,2)+1]
+		WdB = dbv.(W[keys(𝑓)])
+		WdBw = waveform(𝑓, WdB)
+		nbw_str = @sprintf("NBW = %.1f Hz", 𝑓ₛout*1.5/Nfft) #orig. coords: (10, -90); :cl
+		push!(plot_𝑓dec,
+			cons(:wfrm, WdBw, line=set(style=:solid, color=:red, width=2), label="W"),
+			cons(:atext, nbw_str, y=-90, reloffset=set(x=0.05), align=:cl),
+		)
+	end
+
+	pcoll = push!(cons(:plot_collection, ncolumns=2),
+		plot_tdec, plot_𝑓dec, plot_tos, plot_𝑓os,
+	)
+
+	return (plot=pcoll, u0=u0, w=w)
+end
+
+end #module DSAudioDemo
+
+
+#==Auto-run test code:
+===============================================================================#
+println()
+display(@doc(DSAudioDemo)) #Show user how to use DSAudioDemo
+
+function load_demo4_audio_data(m::DSAudioDemo.Modulator)
+	srcpath = dirname(pathof(RSDeltaSigmaPort))
+	fpath = joinpath(srcpath, "..", "original_source", "delsig", "dsdemo4.mat")
+	alldata = DSAudioDemo.MAT.matread(fpath)
+	ds = alldata["ds"][:]
+	sd = alldata["sd"][:]
+	u0 = ds
+	u = interp(sd, m.OSR)
+	return DSAudioDemo.SrcRaw(u, u0)
+end
+
+function playresults(results)
+	if isa(sig, DSAudioDemo.SrcRamp)
+		@warn("Will not playback ramp signal.")
+		return
+	end
+	println()
+	@info("Listening to ideally sampled/decimated signal...")
+		flush(stdout); flush(stderr)
+		@show DSAudioDemo.play(results.u0)
+	println()
+	@info("Listening to modulator output...")
+		flush(stdout); flush(stderr)
+		@show DSAudioDemo.play(results.w)
+
+	println("\nReplay results with:")
+	println("\tplayresults(results)")
 	return
 end
 
-end #module ds_audiodemo
-
-display(@doc(DSAudioDemo)) #Show user to use ds_audiodemo
-
-sig = DSAudioDemo.SrcSine(f=500)
+#Inputs
+dsm = DSAudioDemo.Modulator(1, OSR=32, sincorder=2)
+#sig = load_demo4_audio_data(dsm)
+sig = DSAudioDemo.SrcSine(f=500) #500, 4000, 4200
 #sig = DSAudioDemo.SrcRamp()
-#sig = DSAudioDemo.SrcWav()
 
-m = DSAudioDemo.Modulator(1, OSR=32, sincorder=2)
-DSAudioDemo.run(m, Tsim=2.0, input=sig)
+println("\nUsing modulator:")
+@show dsm
 
-#Last line
+println()
+@info("Performing ΔΣ audio simulation..."); flush(stdout); flush(stderr)
+results = DSAudioDemo.run(dsm, Tsim=3.0, input=sig)
+println("\tdone."); flush(stdout); flush(stderr)
+
+println()
+@info("Displaying results..."); flush(stdout); flush(stderr)
+displaygui(results.plot); sleep(1) #Ideally: `doevents()`
+
+playresults(results)
+println()
+
+:END_OF_DEMO

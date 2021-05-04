@@ -26,7 +26,7 @@ import LinearAlgebra: norm, diagm, eigen, cond
 import SpecialFunctions: erfinv
 import Interpolations
 import FFTW: fft, fftshift
-import DSP: conv
+import DSP: conv, filt
 #import Polynomials #roots, Polynomial
 import Printf: @sprintf
 using CMDimData
@@ -63,12 +63,13 @@ include("text.jl")
 include("datasets.jl")
 include("signals_time.jl")
 include("power.jl")
+include("timedomain.jl")
+include("windowing.jl")
 include("snr.jl")
 include("optimize.jl")
 include("transferfunctions.jl")
 include("statespace.jl")
 include("mapCtoD.jl")
-include("windowing.jl")
 include("synthesizeNTF.jl")
 include("quantizer.jl")
 include("simulateDSM.jl")
@@ -95,6 +96,7 @@ export cplxpair
 export _ss, _zpk, _zpkdata
 export _zp2ss, _zp2tf, _freqz, _tf, _minreal, _impulse
 export interp1_lin, interp1_cubic #Specialized names
+export interp
 export eye, orth, eig
 
 #Data/arrays:
@@ -111,8 +113,8 @@ export ds_f1f2, default_ftest, default_fband
 export genTestTone, genTestTone_quad, genTestTone_sin
 export pulse, impL1
 
-#Windowing:
-export ds_hann
+#Windowing/time domain:
+export ds_hann, sinc_decimate
 
 #Misc. calculations:
 export calcSpecInfo

@@ -144,4 +144,21 @@ function interp1_cubic(xA, yA, xv)
 		intf = ILib.scale(itp, xA)
 	return intf(xv)
 end
+
+#FIXME/VERIFYME
+#Algoritm assembled together by MALaforge, hoping it will be sufficient.
+#Probably a good idea to have an expert implement proper function.
+function interp(v, OSR::Int)
+	thresh = .01
+	Δs = OSR*ceil(Int, 1/(thresh*π))
+	x = -Δs:1:Δs
+	v_0 = zeros(length(v)*OSR)
+	for i in 0:length(v)-1
+		v_0[1+OSR*i] = v[1+i]
+	end
+	_filt = sinc.(x/OSR)
+	result = conv(_filt, v_0)
+	result = result[Δs .+ (1:length(v_0))]
+	return result
+end
 #Last line

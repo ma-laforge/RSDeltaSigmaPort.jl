@@ -33,5 +33,11 @@ end
 @testset "poly()" begin show_testset_description()
 	@test RSDeltaSigmaPort.poly([3,4,5]) == [1, -12, 47, -60]
 end
+@testset "interp()" begin show_testset_description()
+	abstol = 1e-15
+	v = sin.(0:.1:2π)
+	OSR = 32
+	@test all(abs.(RSDeltaSigmaPort.interp(v, OSR)[1:OSR:end] .- v[:]) .< abstol)
+end
 
 end
