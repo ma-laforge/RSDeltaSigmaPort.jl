@@ -50,6 +50,29 @@ Create a staircase-waveform object with a given string to identify the sweep.
 """
 wfrm_stairs(x, y; sweepid::String="i") = _stairs__(x, y, sweepid)
 
+"""`(values, sticks) = lollipop(x, y; ybot=0.0)`
+
+Generate waveforms suitable for "lollipop" plots (o's and sticks)
+"""
+function lollipop(x, y; ybot::Float64=0.0)
+	#Make sure we have column vectors of Float64 (Required by InspectDR):
+	x = Float64.(x[:]); y = Float64.(abs.(y[:]))
+	len = length(x)
+	if length(y) != len
+		error("x & y array lengths must match.")
+	end
+
+	#Generate sticks
+	xsticks = [x'; x'; fill(NaN, (1,len))]
+	ysticks = [y'; fill(ybot, (1,len)); fill(NaN, (1,len))]
+	xsticks = xsticks[:]; ysticks = ysticks[:] #Need to re-sort as vectors
+
+	#Generate waveforms:
+	values = waveform(x, y)
+	sticks = waveform(xsticks, ysticks)
+	return (values, sticks)
+end
+
 
 #==Time domain plots of modulator
 ===============================================================================#
@@ -87,32 +110,18 @@ function plotModTransient(inputSig, outputSig; legend::Bool=true, color=:blue)
 end
 
 
-"""`lollipop(x, y, color=:blue, lw::Float64=2.0, ybot=0)`
+"""`plotLollipop(x, y; color=:blue, lw=2.0, ybot=0.0, label="", legend=false)`
 
-Plot lollipops (o's and sticks).
+Generate "lollipop" plot (o's and sticks).
 """
-function plotLollipop(x, y, color=:blue, lw::Float64=2.0, ybot::Float64=0.0, label="", legend=false)
+function plotLollipop(x, y; color=:blue, lw::Float64=2.0, ybot::Float64=0.0, label="", legend=false)
 	plot = cons(:plot, linlin, title = "Time-domain", legend=legend,
 		labels=set(xaxis="Time", yaxis="Amplitude"),
 	)
+
+	(values, sticks) = lollipop(x, y, ybot=ybot)
+
 	simglyph = cons(:a, glyph=set(shape=:o, size=1.5, color=color, fillcolor=color))
-
-	#Make sure we have column vectors of Float64 (Required by InspectDR):
-	x = Float64.(x[:]); y = Float64.(abs.(y[:]))
-	len = length(x)
-	if length(y) != len
-		error("x & y array lengths must match.")
-	end
-
-	#Generate sticks
-	xsticks = [x'; x'; fill(NaN, (1,len))]
-	ysticks = [y'; fill(ybot, (1,len)); fill(NaN, (1,len))]
-	xsticks = xsticks[:]; ysticks = ysticks[:] #Need to re-sort as vectors
-
-	#Generate waveforms:
-	values = waveform(x, y)
-	sticks = waveform(xsticks, ysticks)
-
 	push!(plot,
 		cons(:wfrm, sticks, line=set(style=:solid, color=color, width=lw), label=label),
 		cons(:wfrm, values, simglyph, line=set(style=:none, color=color, width=lw), label=label),

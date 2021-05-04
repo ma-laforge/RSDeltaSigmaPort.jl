@@ -5,6 +5,8 @@
 #==Helper functions
 ===============================================================================#
 function B2formula(Ac, t1, t2, B2)
+	local term=0
+	local term1=0
 	if t1==0 && t2==0
 		term = B2
 		return term
@@ -17,7 +19,7 @@ function B2formula(Ac, t1, t2, B2)
 	end
 	#Numerical trouble. Perturb slightly and check the result
 	ntry = 0
-	k = sqrt(eps)
+	k = sqrt(eps(1.0))
 	Ac0 = Ac
 	#Make this operation repeatable
 	#rng_state = rng; rng('default') #Original code
@@ -25,7 +27,7 @@ function B2formula(Ac, t1, t2, B2)
 	while ntry <2
 		Ac = Ac0 + k*rand(n,n)
 		tmp = eye(n) - exp(-Ac)
-		if cond(tmp) < 1/sqrt(eps)
+		if cond(tmp) < 1/sqrt(eps(1.0))
 			ntry = ntry+1
 			if ntry == 1
 				term = ( (exp(-Ac*t1) - exp(-Ac*t2)) * inv(tmp)) * B2
@@ -83,9 +85,9 @@ function mapCtoD(sys_c; t=[0 1], f0::Float64=0.0, calcGp::Bool = false)
 		error("The t argument has the wrong dimensions.")
 	end
 
-	di = ones(1,ni)
+	di = ones(ni)
 	for i in 1:ni
-		if t[i,:]==[-1 -1]
+		if t[[i],:]==[-1 -1]
 			di[i] = 0
 		end
 	end
@@ -108,8 +110,8 @@ function mapCtoD(sys_c; t=[0 1], f0::Float64=0.0, calcGp::Bool = false)
 	#Examine the discrete-time inputs to see how big the
 	#augmented matrices need to be.
 	n = size(A,1)
-	t2 = ceil(t[idi,2])
-	esn = (t2 .== t[idi,2]) .& (D(1,idi) .!= 0)' #extra states needed?
+	t2 = ceil.(Int, t[idi,2])
+	esn = (t2 .== t[idi,2]) .& (D[[1],idi] .!= 0)' #extra states needed?
 	np = n + maximum(t2 .- 1 + esn)
 
 	#Augment A to np x np, B to np x 1, C to 1 x np.
@@ -161,8 +163,8 @@ function mapCtoD(sys_c; t=[0 1], f0::Float64=0.0, calcGp::Bool = false)
 			end
 		end
 	end
-	sys = _ss(Ap, Bp, Cp, Dp, 1)
 
+	sys = _ss(Ap, Bp, Cp, Dp, 1)
 	Gp = nothing
 	if any(di .== 0)
 		if calcGp
@@ -216,9 +218,11 @@ function mapCtoD(sys_c; t=[0 1], f0::Float64=0.0, calcGp::Bool = false)
 					end
 				end
 			end
-			sys.B = [padb(B1,np) sys.B]; sys.D = [D1 sys.D]
+			newB = [padb(B1,np) sys.B]; newD = [D1 sys.D]
+			sys = _ss(sys.A, newB, sys.C, newD)
 		else #Cheat and just dublicate the B1 terms
-			sys.B = [padb(Bc1,np) sys.B]; sys.D = [D1 sys.D]
+			newB = [padb(Bc1,np) sys.B]; newD = [D1 sys.D]
+			sys = _ss(sys.A, newB, sys.C, newD)
 		end
 	end
 

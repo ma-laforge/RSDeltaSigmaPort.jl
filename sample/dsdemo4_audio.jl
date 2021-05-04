@@ -262,7 +262,7 @@ function run(m::Modulator; Tsim::Float64=2.0, input=SrcSine(f=500))
 		plot_tdec, plot_𝑓dec, plot_tos, plot_𝑓os,
 	)
 
-	return (plot=pcoll, u0=u0, w=w)
+	return (plot=pcoll, u0=u0, w=w, input=input)
 end
 
 end #module DSAudioDemo
@@ -285,7 +285,7 @@ function load_demo4_audio_data(m::DSAudioDemo.Modulator)
 end
 
 function playresults(results)
-	if isa(sig, DSAudioDemo.SrcRamp)
+	if isa(results.input, DSAudioDemo.SrcRamp)
 		@warn("Will not playback ramp signal.")
 		return
 	end

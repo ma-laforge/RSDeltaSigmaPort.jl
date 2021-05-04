@@ -15,15 +15,18 @@
 ***INITIAL STAGES OF PORT***: A limited portion of the Delta Sigma toolbox has been ported.
 
 The following high-level functionnality has (at least partially) been ported:
- - `evalTF`
- - `synthesizeNTF`, `realizeNTF`, `realizeNTF_ct`
- - `stuffABCD`, `scaleABCD`, `mapABCD`
- - `calculateSNR`, `peakSNR`, `predictSNR`
  - `simulateDSM`, `simulateSNR`
+ - `synthesizeNTF`, `realizeNTF`, `realizeNTF_ct`
+ - `calculateSNR`, `peakSNR`, `predictSNR`
+ - `calculateTF`, `evalTF`, `evalTFP`
+ - `stuffABCD`, `scaleABCD`, `mapABCD`, `partitionABCD`
+ - `mapCtoD`, `mapQtoR`
+ - `pulse`, `impL1`
+ - `lollipop`, `logsmooth`
  - `documentNTF`, `plotExampleSpectrum`
 
 And demos:
- - `dsdemo1`, `dsdemo2`, `dsdemo3` `dsexample1`
+ - `dsdemo1[...]4`, `dsexample1[...]2`
 
 ## Table of contents
 

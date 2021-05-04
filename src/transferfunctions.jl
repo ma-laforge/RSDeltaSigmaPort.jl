@@ -4,7 +4,7 @@
 """`y = evalRPoly(roots,x,k=1)`
 Compute the value of a polynomial which is given in terms of its roots.
 """
-function evalRPoly(roots,x,k=1)
+function evalRPoly(roots,x::AbstractArray,k=1)
 	y = k * ones(size(x))
 	finiteroots = findall(isfinite.(roots))
 	roots = roots[finiteroots]
@@ -13,6 +13,7 @@ function evalRPoly(roots,x,k=1)
 	end
 	return y
 end
+evalRPoly(roots,x,k=1) = evalRPoly(roots, [x], k)[1]
 
 """`h = evalTF(tf,z)`
 Evaluates the rational function described by the struct tf
@@ -52,7 +53,7 @@ where Hs is a cts-time TF and Hz is a discrete-time TF.
 Both Hs and Hz are SISO zpk objects.
 This function attempts to cancel poles in Hs with zeros in Hz.
 """
-function evalTFP(Hs,Hz,f)
+function evalTFP(Hs,Hz,f::AbstractArray)
 	(szeros, spoles, sk) = _zpkdata(Hs, 1)
 	(zzeros, zpoles, zk) = _zpkdata(Hz, 1)
 
@@ -71,8 +72,8 @@ function evalTFP(Hs,Hz,f)
 			#wi is far from a pole, so just use the product Hs*Hz
 			#H[i] = evalTF(Hs,si) * evalTF(Hz,zi);
 			#use evalRPoly directly with z/p/k data, much faster. (David Alldred, Feb 4 2013)
-			H[i] = sk * evalRPoly(szeros,si) ./ evalRPoly(spoles,si) *
-				zk * evalRPoly(zzeros,zi) ./ evalRPoly(zpoles,zi)
+			H[i] = sk * evalRPoly(szeros,si) / evalRPoly(spoles,si) *
+				zk * evalRPoly(zzeros,zi) / evalRPoly(zpoles,zi)
 		else
 			#cancel pole(s) of Hs with corresponding zero(s) of Hz
 			cancelz = abs.(zi .- zzeros) .< zlim
@@ -82,14 +83,15 @@ function evalTFP(Hs,Hz,f)
 			elseif sumcancelz < sumcancel
 				H[i] = Inf
 			else
-				H[i] = evalRPoly(szeros,si,Hs.k) *
-					zi^sumcancel * evalRPoly(zzeros[.!cancelz],zi,Hz.k) /
+				H[i] = evalRPoly(szeros,si,sk) *
+					zi^sumcancel * evalRPoly(zzeros[.!cancelz],zi,zk) /
 					(evalRPoly(spoles[.!cancel],si,1)*evalRPoly(zpoles,zi,1))
 			end
 		end
 	end
 	return H
 end
+evalTFP(Hs,Hz,f) = evalTFP(Hs,Hz,[f])[1] #Single value
 
 
 """`evalMixedTF(tf,f, df=1e-5)`
@@ -159,6 +161,28 @@ function powerGain(num, den, Nimp0::Int=100)
 	end
 	pGain = unstable ? Inf : sum(imp .^ 2)
 	return (pGain, Nimp)
+end
+
+"""`zpk2 = cancelPZ(zpk1, tol=1e-6)`
+
+Cancel zeros/poles in a zpk system
+"""
+function cancelPZ(zpk1, tol::Float64=1e-6)
+	(z, p) = _zpkdata(zpk1, 1)
+	zpk2 = deepcopy(zpk1) #Captures k, and whether tf is in s or z
+
+	#Need to go in reverse order because z gets smaller with each cancellation
+	for i = length(z):-1:1
+		d = z[i] .- p
+		cancel = findall(abs.(d) .< tol)
+		if !isempty(cancel)
+			deleteat!(p, cancel[1])
+			deleteat!(z, i)
+		end
+	end
+	zpk2.z = z
+	zpk2.p = p
+	return zpk2
 end
 
 

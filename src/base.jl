@@ -29,7 +29,7 @@ mutable struct ZPKData
 	Ts::Real
 end
 
-function _zpk(z, p, k, Ts::Number)
+function _zpk(z, p, k, Ts::Number=0)
 	ZPKData(z, p, k, Ts)
 end
 

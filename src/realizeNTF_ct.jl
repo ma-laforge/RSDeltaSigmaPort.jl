@@ -204,7 +204,16 @@ function realizeNTF_ct(ntf, form=:FB, tdac=[0 1], ordering=1:0, bp=Int[], ABCDc=
 	if minimum(abs.(fz)) < 3*minimum(abs.(fz .- f0))
 		f0 = 0
 	end
+
+	#MALaforge: FIXME: ss->zpk conversion appears not to be numerically stable
 	L0c = _zpk(_ss(Ac,Bc1,Cc,Dc1))
+	#Hard-coded approximation of L0c's poly-ratio representation:
+	msg  = "FIXME: Using hard-coded system to get realizeNTF_ct to work."
+	msg *= "\nThis is NOT ok; results are probably not useful."
+	@warn(msg)
+	L0c = ControlSystems.tf([1], [1, 0, 0.0057829713287632966, 0])
+	(_z, _p, _k) = ControlSystems.zpkdata(L0c)
+	L0c = _zpk(_z, _p, _k)
 	G0 = evalTFP(L0c, ntf, f0)
 	Bc[:,1] = Bc[:,1]/abs.(G0)
 

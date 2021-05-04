@@ -97,6 +97,7 @@ export _ss, _zpk, _zpkdata
 export _zp2ss, _zp2tf, _freqz, _tf, _minreal, _impulse
 export interp1_lin, interp1_cubic #Specialized names
 export interp
+export squeeze
 export eye, orth, eig
 
 #Data/arrays:
@@ -121,8 +122,9 @@ export calcSpecInfo
 export calcSNRInfo, calculateSNR, peakSNR, predictSNR
 
 #Transfer functions:
-export evalTF, rmsGain
 export synthesizeNTF, realizeNTF, realizeNTF_ct
+export calculateTF, evalTF, evalTFP
+export rmsGain, cancelPZ
 
 #State space:
 export stuffABCD, scaleABCD, mapABCD, partitionABCD
@@ -132,7 +134,7 @@ export mapCtoD
 export simulateDSM, simulateSNR
 
 #Plotting:
-export wfrm_stairs, waveform, logsmooth
+export waveform, wfrm_stairs, lollipop, logsmooth
 export plotSpec, plotSpec!
 export plotPZ, plotPZ!, plotNTF, plotNTF!
 export plotModTransient, plotModSpectrum, plotModSpectrum!
