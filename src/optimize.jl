@@ -3,8 +3,8 @@
 
 "values for optimal zeros when opt==1"
 const _VALUES_OPTZEROS_OPT1 = [ #Currently not type stable
-	0.0, # n = 1
-	sqrt(1/3),
+	[0.0], # n = 1
+	[sqrt(1/3)],
 	[sqrt(3/5), 0],
 	sqrt.([3/7+sqrt(9/49-3/35), 3/7-sqrt(9/49-3/35)]),
 	sqrt.([5/9+sqrt(25/81-5/21), 5/9-sqrt(25/81-5/21), 0]), # n = 5
@@ -22,7 +22,7 @@ const _VALUES_OPTZEROS_OPT1 = [ #Currently not type stable
 "values for optimal zeros when opt==2" #or other?; is it called in other cases?
 const _VALUES_OPTZEROS_OPT2 = [
 	_VALUES_OPTZEROS_OPT1[1], # n = 1
-	0.0,
+	[0.0],
 	_VALUES_OPTZEROS_OPT1[3],
 	[0, sqrt(5/7)],
 	_VALUES_OPTZEROS_OPT1[5], # n = 5

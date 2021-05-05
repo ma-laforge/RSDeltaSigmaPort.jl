@@ -78,6 +78,36 @@ function plotModSpectrum(specinfo; id::String="Simulation", color=:blue)
 end
 
 
+#==plotSpectrum()
+===============================================================================#
+function plotSpectrum()
+	plot = cons(:plot, loglin, title = "Smoothed Spectrum", legend=true,
+		xyaxes=set(xmin=1e-3, xmax=0.5, ymin=-120, ymax=0),
+		labels=set(xaxis="Normalized Frequency", yaxis=""),
+	)
+	return plot
+end
+
+function plotSpectrum!(plot, X, fin; nbin::Int=8, n::Int=3, lw=1, color=:blue, id="")
+	(f, p) = logsmooth(X, fin, nbin=nbin, n=n)
+	pw = waveform(f, p)
+	push!(plot, 
+		cons(:wfrm, pw, line=set(style=:solid, color=color, width=lw), label=id),
+	)
+	return plot
+end
+
+"""`plotSpectrum(X, fin, nbin=8, n=3, lw=1)`
+
+Plot a smoothed spectrum.
+"""
+function plotSpectrum(X, fin; nbin::Int=8, n::Int=3, lw=1, color=:blue, id="")
+	plot = plotSpectrum()
+	plotSpectrum!(plot, X, fin, nbin=nbin, n=n, lw=lw, color=color, id=id)
+	return plot
+end
+
+
 #==plotExampleSpectrum
 ===============================================================================#
 """`plotExampleSpectrum(NTF, OSR=64, M=1, f0=0, quadrature=false, ampdB=-3, ftest=nothing, N=2^12, sizes=nothing)`

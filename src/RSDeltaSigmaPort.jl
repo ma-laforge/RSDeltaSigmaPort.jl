@@ -72,7 +72,9 @@ include("statespace.jl")
 include("mapCtoD.jl")
 include("synthesizeNTF.jl")
 include("quantizer.jl")
+include("simulate_base.jl")
 include("simulateDSM.jl")
+include("simulateMS.jl")
 include("realizeNTF.jl")
 include("realizeNTF_ct.jl")
 include("calc_spectrum.jl")
@@ -115,7 +117,9 @@ export genTestTone, genTestTone_quad, genTestTone_sin
 export pulse, impL1
 
 #Windowing/time domain:
-export ds_hann, sinc_decimate
+export ds_hann, applywnd
+export ds_therm
+export sinc_decimate
 
 #Misc. calculations:
 export calcSpecInfo
@@ -131,18 +135,17 @@ export stuffABCD, scaleABCD, mapABCD, partitionABCD
 export mapCtoD
 
 #Simulations:
-export simulateDSM, simulateSNR
+export simulateDSM, simulateMS
+export simulateSNR
 
 #Plotting:
 export waveform, wfrm_stairs, lollipop, logsmooth
-export plotSpec, plotSpec!
 export plotPZ, plotPZ!, plotNTF, plotNTF!
-export plotModTransient, plotModSpectrum, plotModSpectrum!
-export plotLollipop
-export plotExampleSpectrum
-export plotSNR, plotSNR!
 export documentNTF
-export plotStateMaxima
+export plotSNR, plotSNR!, plotStateMaxima, plotUsage
+export plotModTransient, plotLollipop
+export plotSpec, plotSpec!, plotModSpectrum, plotModSpectrum!
+export plotSpectrum, plotSpectrum!, plotExampleSpectrum
 
 #Displaying plots:
 export inlinedisp, saveimage, displaygui

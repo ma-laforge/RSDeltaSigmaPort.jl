@@ -93,6 +93,11 @@ function saveimage(mime::Symbol, filepath::String, plot::PlotOrColl; AR=1, width
 	end
 end
 
-displaygui(plot::PlotOrColl) = EasyPlot.displaygui(:InspectDR, plot)
+function displaygui(plot::PlotOrColl)
+	result = EasyPlot.displaygui(:InspectDR, plot)
+	sleep(0.1) #Get GUI to refresh (Ideally: `doevents()`, or something)
+	#NOTE: Appears sleep needs to be > 0 to refresh.
+	return result
+end
 
 #Last line

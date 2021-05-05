@@ -79,4 +79,61 @@ function logsmooth(X, inBin; nbin::Int=8, n::Int=3)
 	return (f, p)
 end
 
+
+#==plotUsage()
+===============================================================================#
+"""`plotUsage(sv,colors=[:blue, :green, :red, :yellow])`
+Plot the element usage for a multi-elemet DAC.
+The colors are for sv = 1,-1,i,-i.
+"""
+function plotUsage(sv,colors=[:blue, :green, :red, :yellow])
+	(M, T) = size(sv)
+	T2 = ceil(Int, (T+1)/2)
+
+	plot = cons(:plot, linlin, title = "", legend=false,
+		xyaxes=set(xmin=0, xmax=T, ymin=0, ymax=M),
+		labels=set(xaxis="Time", yaxis="Element Number"),
+	)
+
+	#Plot the grid
+	x = [(0:T)'; (0:T)']
+		x = x[:]
+	y = [zeros(1,T2); M*ones(2,T2); zeros(1,T2)]
+		y = y[1:2*(T+1)]
+	yw = waveform(x, y) #Convert to waveform
+	push!(plot,
+		cons(:wfrm, yw, line=set(style=:solid, color=:black, width=2), label=""),
+	)
+
+	M2 = ceil(Int, (M+1)/2)
+	x = [zeros(1,M2); T*ones(2,M2); zeros(1,M2)]
+		x = x[1:2*(M+1)]
+	y = [0:M; 0:M]
+		y = y[:]
+	yw = waveform(x, y) #Convert to waveform
+	push!(plot,
+		cons(:wfrm, yw, line=set(style=:solid, color=:black, width=2), label=""),
+	)
+
+	@warn("TODO (plotUsage): draw polygons.")
+
+#=Create polygons
+	#Not yet supported by EasyPlot (would have to manipulate InspectDR manually)
+	for t in 1:T
+		for i in 1:M
+			if sv[i,t] == 1
+				fill([t-1 t-1 t t],[i-1 i i i-1],colors(1));
+			elseif sv(i,t) == -1
+				fill([t-1 t-1 t t],[i-1 i i i-1],colors(2));
+			elseif sv(i,t) == 1i
+				fill([t-1 t-1 t t],[i-1 i i i-1],colors(3));
+			elseif sv(i,t) == -1i
+				fill([t-1 t-1 t t],[i-1 i i i-1],colors(4));
+			end
+		end
+	end
+=#
+	return plot
+end
+
 #Last line

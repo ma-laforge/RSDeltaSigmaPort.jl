@@ -27,8 +27,7 @@ function calcSpecInfo(sig, NTF, fband, ftest::Float64; M::Int=1, quadrature::Boo
 
 	Δ = 2
 	NBW = 1.5/N
-	sigwnd = sig .* ds_hann(N)' #windowed signal (1xN array)
-	spec0 = fft(sigwnd)/(M*N/4)
+	spec0 = fft(applywnd(sig, ds_hann(N)))/(M*N/4)
 	local 𝑓, specdB, SNR, ePSD
 	if !quadrature
 		𝑓pts = div(N,2)+1 #Only need half the spectrum for display purposes

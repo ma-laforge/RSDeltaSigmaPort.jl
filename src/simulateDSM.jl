@@ -1,8 +1,8 @@
-#RSDeltaSigma: simulateDSM algorithm
+#RSDeltaSigma: simulateDSM() algorithm
 #-------------------------------------------------------------------------------
 
 
-#==simulateDSM
+#==simulateDSM()
 ===============================================================================#
 #Main algorithm for simulateDSM
 function _simulateDSM(u, nq, nlev, x0, order, A, B, C, D1, savestate::Bool, trackmax::Bool)
@@ -102,7 +102,7 @@ zp2ss.m.
  - .y:
 """ simulateDSM
 
-@warn("Implements .m version of simulateDSM. C code might be more efficient.")
+@warn("Implements .m version of simulateDSM(). C code might be more efficient/validated.")
 
 
 #==simulateQDSM

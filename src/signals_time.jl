@@ -141,4 +141,21 @@ function pulse(S, tp=[0 1], dt::Float64=1.0, tfinal::Float64=10.0, nosum::Bool=f
 	return y
 end
 
+
+#==pulse
+===============================================================================#
+"""`sv = ds_therm(v,M)`
+
+`sv` is an `M` by `length(v)` matrix of `+/-1`s
+where `sum(sv)=v` and the `-1`s are located in the bottom rows
+"""
+function ds_therm(v, M::Int)
+	sv = -ones(M, length(v))
+	for i in 1:length(v)
+		iend = array_round((M+v[i])/2)
+		sv[1:iend, i] .= 1
+	end
+	return sv
+end
+
 #Last line

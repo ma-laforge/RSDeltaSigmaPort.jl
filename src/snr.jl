@@ -347,7 +347,7 @@ function simulateSNR(arg1, osr::Int=64, amp=vcat(-120:10:-20, -15, -10:0);
 				v = v[1,:] + im*v[2,:]
 			end
 		end
-		hwfft = fftshift(fft(window .* v[1+Ntransient:N+Ntransient]))
+		hwfft = fftshift(fft(applywnd(v[1+Ntransient:N+Ntransient], window)))
 		snr[i] = calculateSNR(hwfft[inBandBins], F)
 		i=i+1
 	end

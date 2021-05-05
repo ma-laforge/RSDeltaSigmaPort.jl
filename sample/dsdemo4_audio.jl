@@ -171,7 +171,7 @@ function run(m::Modulator; Tsim::Float64=2.0, input=SrcSine(f=500))
 		if isa(input, SrcSine)
 			U = fft(u0)/(N/4)
 		else #SrcRaw
-			U = fft(u0 .* ds_hann(N))/(N/4)
+			U = fft(applywnd(u0, ds_hann(N)))/(N/4)
 		end
 		𝑓 = range(0, stop=𝑓ₛout, length=N+1); 𝑓 = 𝑓[1:div(N,2)+1]
 		UdB = dbv.(U[keys(𝑓)])
@@ -210,7 +210,7 @@ function run(m::Modulator; Tsim::Float64=2.0, input=SrcSine(f=500))
 	N = length(v)
 	Nfft = min(N, 16*8192)
 	n = array_round((N-Nfft)/2+1):array_round((N+Nfft)/2)
-	V = fft(v[n] .* ds_hann(Nfft))/(Nfft/4)
+	V = fft(applywnd(v[n], ds_hann(Nfft)))/(Nfft/4)
 	inBin = ceil(Int, Nfft/1000)
 	if isa(input, SrcSine)
 		inBin = round(Int, input.f/fos*Nfft+1) #Bin of tone
@@ -246,7 +246,7 @@ function run(m::Modulator; Tsim::Float64=2.0, input=SrcSine(f=500))
 		if isa(input, SrcSine)
 			W = fft(w)/(N/4)
 		else
-			W = fft(w.*ds_hann(N))/(N/4)
+			W = fft(applywnd(w, ds_hann(N)))/(N/4)
 		end
 		𝑓 = range(0, stop=𝑓ₛout, length=Nfft+1); 𝑓 = 𝑓[1:div(Nfft,2)+1]
 		WdB = dbv.(W[keys(𝑓)])
@@ -319,7 +319,7 @@ println("\tdone."); flush(stdout); flush(stderr)
 
 println()
 @info("Displaying results..."); flush(stdout); flush(stderr)
-displaygui(results.plot); sleep(1) #Ideally: `doevents()`
+displaygui(results.plot)
 
 playresults(results)
 println()
