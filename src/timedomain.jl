@@ -1,6 +1,28 @@
 #RSDeltaSigmaPort: Time domain operations/utilities
 #-------------------------------------------------------------------------------
 
+"""`y = delay(x, n=1)`
+
+Delay signal x by n samples
+"""
+function delay(x, n::Int=1)
+	local y
+	nx = length(x)
+	if nx <= n
+		y = zeros(size(x))
+	else
+		if 1 == length(size(x))
+			y = vcat(zeros(n), x[1:nx-n])
+		elseif 1 == size(x, 2) #Still a row vector, but 2D+ now
+			y = vcat(zeros(n,1), x[1:nx-n,[1]])
+		else #Assume a single row vector:
+			y = hcat(zeros(1,n), x[[1],1:nx-n])
+		end
+	end
+	return y
+end
+
+
 """`y = sinc_decimate(x, m, r)`
 
 Decimate x by m-th order sinc of length r.

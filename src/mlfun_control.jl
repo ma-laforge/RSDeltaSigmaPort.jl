@@ -20,7 +20,6 @@ function _zpk(sys::ControlSystems.StateSpace)
 	#Cannot access sys.Ts for continuous time:
 	#(use sys because Ts does not get ported over in zpk() for some reason)
 	Ts = isdiscrete(sys) ? sys.Ts : 0.0
-
 	return _zpk(z, p, k, Ts)
 end
 
@@ -47,7 +46,6 @@ function _minreal(tf::ZPKData, tol)
 	tf = ControlSystems.zpk(tf.z, tf.p, tf.k, tf.Ts)
 	mrtf = ControlSystems.minreal(tf, tol)
 	z, p, k = ControlSystems.zpkdata(mrtf)
-#	z=z[1][:]; p=p[1][:]; k=k[1]
 	#Cannot access mrtf.Ts for continuous time:
 	Ts = isdiscrete(mrtf) ? mrtf.Ts : 0.0
 #	map(display, [z, p, k, Ts])
@@ -56,6 +54,16 @@ end
 
 function _impulse(sys, t)
 	y, t, x = ControlSystems.impulse(sys, t)
+	return (y, t, x)
+end
+
+function _lsim(sys, u)
+	if !isdiscrete(sys)
+		throw("_lsim: must specify t-vector")
+	end
+	Ts = sys.Ts
+	t = range(0, step=Ts, length=length(u))
+	y, t, x = ControlSystems.lsim(sys, u, t)
 	return (y, t, x)
 end
 

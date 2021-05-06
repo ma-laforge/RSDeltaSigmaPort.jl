@@ -11,6 +11,9 @@
 
 
 module RSDeltaSigmaPort
+
+const rootpath = realpath(joinpath(@__DIR__, ".."))
+
 #=Flags:
 	-TODO
 	-VERIFYME: is this the correct behaviour???
@@ -43,6 +46,7 @@ using ControlSystems: isdiscrete
 
 "Availability of `fmincon` function from the Optimization Toolbox"
 const FMINCON_AVAIL = false #NEEDSTOOLKIT
+const FIRPM_AVAIL = false #NEEDSTOOLKIT
 
 function throw_unreachable()
 	msg = "Code expected to be unreachable with exception handling"
@@ -77,6 +81,9 @@ include("simulateDSM.jl")
 include("simulateMS.jl")
 include("realizeNTF.jl")
 include("realizeNTF_ct.jl")
+include("filter_base.jl")
+include("exampleHBF.jl")
+include("simulateHBF.jl")
 include("calc_spectrum.jl")
 include("plot_base.jl")
 include("plot_transient.jl")
@@ -86,6 +93,23 @@ include("plot_zplane.jl")
 include("plot_SNR.jl")
 include("plot_state.jl")
 include("display.jl")
+
+
+#==Convenience macros
+===============================================================================#
+macro runsample(filename::String)
+	fnstr = "$filename"
+	fpath = realpath(joinpath(rootpath, "sample", fnstr))
+	@info("Running RSDeltaSigmaPort sample:\n$fpath...")
+	m = quote
+		include($fpath)
+	end
+	return esc(m) #esc: Evaluate in calling module
+end
+
+
+#==Exported interface
+===============================================================================#
 
 #Simple calculations:
 export dbm, dbp, dbv, rms
@@ -134,9 +158,12 @@ export rmsGain, cancelPZ
 export stuffABCD, scaleABCD, mapABCD, partitionABCD
 export mapCtoD
 
+#Filters:
+export exampleHBF
+
 #Simulations:
 export simulateDSM, simulateMS
-export simulateSNR
+export simulateSNR, simulateHBF
 
 #Plotting:
 export waveform, wfrm_stairs, lollipop, logsmooth

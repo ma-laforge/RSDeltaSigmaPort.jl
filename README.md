@@ -26,7 +26,7 @@ The following high-level functionnality has (at least partially) been ported:
  - `documentNTF`, `plotExampleSpectrum`
 
 And demos:
- - `dsdemo1[...]4`, `dsexample1[...]2`
+ - `dsdemo1`...`dsdemo6, `dsexample1`, `dsexample2`
 
 ## Table of contents
 
@@ -37,6 +37,7 @@ And demos:
     1. [Sample directory w/plain `.jl` files (`sample/`)](sample/)
  1. [Plotting](#Plotting)
  1. [Installation](#Installation)
+ 1. [Running sample scripts](#SampleScripts)
  1. [Julia tips](doc/juliatips.md)
     1. [Useful functions](doc/juliatips.md#FunctionLibraries)
     1. [`linspace()` & `logspace()`](doc/juliatips.md#LinLogSpace)
@@ -81,6 +82,26 @@ It can be installed using Julia's built-in package manager:
 ```julia-repl
 julia> ]
 pkg> add RSDeltaSigmaPort
+```
+<a name="SampleScripts"></a>
+## Running sample scripts
+Sample scripts in the `sample/` subdirectory can be run using `include()`.
+
+For convenience, the `@runsample` macro automatically locates the script path
+and executes `include()` for you:
+
+```julia-repl
+julia> using RSDeltaSigmaPort #Will take a while to load, compile, etc...
+julia> import RSDeltaSigmaPort: @runsample
+
+julia> @runsample("dsdemo1.jl")
+julia> @runsample("dsdemo2.jl")
+julia> @runsample("dsdemo3.jl")
+julia> @runsample("dsdemo4_audio.jl")
+julia> @runsample("dsdemo5.jl")
+julia> @runsample("dsdemo6.jl")
+julia> @runsample("dsexample1.jl")
+julia> @runsample("dsexample2.jl")
 ```
 
 <a name="KnownLimitations"></a>
