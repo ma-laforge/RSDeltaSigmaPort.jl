@@ -12,21 +12,22 @@
 [![Build Status](https://github.com/ma-laforge/RSDeltaSigmaPort.jl/workflows/CI/badge.svg)](https://github.com/ma-laforge/RSDeltaSigmaPort.jl/actions?query=workflow%3ACI)
 
 ### :warning: Progress report
-***INITIAL STAGES OF PORT***: A limited portion of the Delta Sigma toolbox has been ported.
+***INTERMEDIATE STAGE OF PORT***: A significant portion of the Delta Sigma toolbox has been ported.
 
 The following high-level functionnality has (at least partially) been ported:
- - `simulateDSM`, `simulateSNR`
+ - `simulateDSM`, `simulateMS`, `simulateSNR`, `simulateHBF`
  - `synthesizeNTF`, `realizeNTF`, `realizeNTF_ct`
  - `calculateSNR`, `peakSNR`, `predictSNR`
  - `calculateTF`, `evalTF`, `evalTFP`
  - `stuffABCD`, `scaleABCD`, `mapABCD`, `partitionABCD`
  - `mapCtoD`, `mapQtoR`
+ - `exampleHBF`
  - `pulse`, `impL1`
  - `lollipop`, `logsmooth`
  - `documentNTF`, `plotExampleSpectrum`
 
 And demos:
- - `dsdemo1`, ..., `dsdemo6`, `dsexample1`, `dsexample2`
+ - `dsdemo1`, ..., `dsdemo6`, `dsexample1`, `dsexample2`, `demoLPandBP`
 
 ## Table of contents
 
@@ -113,6 +114,7 @@ julia> @runsample("dsdemo5.jl")
 julia> @runsample("dsdemo6.jl")
 julia> @runsample("dsexample1.jl")
 julia> @runsample("dsexample2.jl")
+julia> @runsample("demoLPandBP.jl")
 ```
 
 <a name="KnownLimitations"></a>
@@ -131,7 +133,7 @@ The module has been tested using the following environment(s):
 
 ## :warning: Disclaimer
 
- - ***INITIAL STAGES OF PORT***: A limited portion of the Delta Sigma toolbox has been ported.
+ - ***INTERMEDIATE STAGE OF PORT***: A significant portion of the Delta Sigma toolbox has been ported.
  - Jupyter [notebooks](notebook/) might be slightly broken/out of date. If so,
    see their counterparts in the [`sample/`](sample/) directory for a more
    regularly maintained example.
