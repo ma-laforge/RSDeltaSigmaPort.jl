@@ -26,7 +26,7 @@ The following high-level functionnality has (at least partially) been ported:
  - `documentNTF`, `plotExampleSpectrum`
 
 And demos:
- - `dsdemo1`...`dsdemo6, `dsexample1`, `dsexample2`
+ - `dsdemo1`, ..., `dsdemo6`, `dsexample1`, `dsexample2`
 
 ## Table of contents
 
@@ -76,13 +76,24 @@ functions found in `plot_*.jl` files in the source directory:
 
 <a name="Installation"></a>
 ## Installation
-`RSDeltaSigmaPort.jl` is registered with Julia's **General** registry.
-It can be installed using Julia's built-in package manager:
+The `RSDeltaSigmaPort.jl` toolbox is written using the Julia programming
+language. Unless you already have Julia installed, you will need to first
+install the base language. Simply download \& install the most recent version
+of Julia from Julia's official "downloads" page.
+
+**Julia's official "downloads" page:**
+ - <https://julialang.org/downloads/>
+
+Step 2 is to install the `RSDeltaSigmaPort.jl` package itself. Since
+`RSDeltaSigmaPort.jl` is registered with Julia's **General** registry, you can
+automatically download & install it from Julia's built-in package manager.
+Simply launch Julia, and run the following from the command prompt:
 
 ```julia-repl
 julia> ]
 pkg> add RSDeltaSigmaPort
 ```
+
 <a name="SampleScripts"></a>
 ## Running sample scripts
 Sample scripts in the `sample/` subdirectory can be run using `include()`.
