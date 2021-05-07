@@ -42,15 +42,7 @@ end
 
 _tf(num, den, ts) = ControlSystems.tf(num, den, ts)
 
-function _minreal(tf::ZPKData, tol)
-	tf = ControlSystems.zpk(tf.z, tf.p, tf.k, tf.Ts)
-	mrtf = ControlSystems.minreal(tf, tol)
-	z, p, k = ControlSystems.zpkdata(mrtf)
-	#Cannot access mrtf.Ts for continuous time:
-	Ts = isdiscrete(mrtf) ? mrtf.Ts : 0.0
-#	map(display, [z, p, k, Ts])
-	return _zpk(z, p, k, Ts)
-end
+_minreal(sys, tol) = ControlSystems.minreal(sys, tol)
 
 function _impulse(sys, t)
 	y, t, x = ControlSystems.impulse(sys, t)

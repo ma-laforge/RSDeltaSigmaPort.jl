@@ -38,7 +38,6 @@ function simulateHBF(x, f1, f2, mode::Int=0)
 
 	if 0 == mode #Plain
 		(up,) = _lsim(F2,x)
-@show size(up), typeof(up)
 		y = 0.5*delay(x,2*n2-1) + f1[1]*up
 		for i in 2:n1
 			(up,) = _lsim(F2,up)

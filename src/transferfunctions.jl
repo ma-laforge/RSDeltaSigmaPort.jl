@@ -215,19 +215,11 @@ function infnorm(H)
 	Hinf = Hval[wi]
 
 	local wmax
-	if false #NEEDSTOOLKIT
-#= Algorithms that use toolkits (files/functions: optimset, fminbnd, fmin)
-	if exist('optimset','file')==2 & exist('fminbnd','file')==2
-		% Home in using the "fminbnd" function.
-		options = optimset('TolX',1e-8,'TolFun',1e-6);
-		wmax = fminbnd('nabsH',w(wi)-dw,w(wi)+dw,options,H);
-	elseif exist('fmin','file')==2
-		% Home in using the "fmin" function.
-		options=zeros(1,18);
-		options(2)=1e-8;
-		options(3)=1e-6;
-		wmax = fmin('nabsH',w(wi)-dw,w(wi)+dw,options,H);
-=#
+	if true #NEEDS_OPTIMIZATION
+		opt = Optim.Options(x_tol=1e-8, f_tol=1e-6)
+		f2min(w) = nabsH(w, H) #Function to minimize (optimum point)
+		lower = w[wi]-dw; upper = w[wi]+dw
+		wmax = optimize(f2min, lower, upper, GoldenSection()).minimum
 	else
 		msg = "Hinf: Warning. Optimization toolbox functions not found.\n" *
 			" The result returned may not be very accurate."
@@ -296,21 +288,16 @@ function calculateTF(ABCD, k::Vector=[1], wantSTF::Bool=true)
 
 	local NTF, STF
 	tol = min(1e-3, max(1e-6, eps(1.0)^(1/(size(ABCD,1)))))
-	if false # true || all(imag.(ABCD) .== 0) #real modulator (Original implementation)
+	if false # true || all(imag.(ABCD) .== 0) #real modulator
 		#REQUESTHELP
 		sys_cl = _ss(Acl,Bcl,Ccl,Dcl,1)
-		tfs = _zpk(sys_cl)
-		mtfs = _minreal(tfs,tol)
+		sys_tf = ControlSystems.tf(sys_cl)
+		mtfs = _minreal(sys_tf, tol)
+		display(mtfs)
+		@show (mtfs.nu, mtfs.ny), (nu, nq)
 		#MALaforge: Can't make sense of the following; not sure what structure should be:
 		STF = mtfs[:,1:nu]
 		NTF = mtfs[:,nu+1:nu+nq]
-#	elseif true || all(imag.(ABCD) .== 0) #real modulator (Direct use of ControlSystems)
-#		sys_cl = ControlSystems.ss(Acl,Bcl,Ccl,Dcl,1)
-#		tfs = ControlSystems.zpk(sys_cl)
-#		mtfs = ControlSystems.minreal(tfs, tol)
-#		z,p,k = ControlSystems.zpkdata(mtfs)
-#		map(display, [z, p, k])
-#		@show nu, nq
 	else #quadrature modulator and less advanced language features
 		p = eig(Acl)
 		NTFz = eig(A)

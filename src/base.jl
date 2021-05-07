@@ -52,7 +52,7 @@ end
 
 abstract type AbstractDSM; end
 
-"""`RealDSM(;order=3, OSR=16, M=1, f0=0, form=:CRFB, Hinf=1.5, opt=0)`
+"""`RealDSM(;order=3, OSR=16, M=1, f0=0, form=:CRFB, Hinf=1.5, opt=1)`
 
 Describe a real-valued (not quadrature) ΔΣ modulator.
 
@@ -63,7 +63,7 @@ Describe a real-valued (not quadrature) ΔΣ modulator.
  - `f0`: center frequency (1->fs)
  - `form`:
  - `H_inf`: maximum NTF gain
- - `opt`: flag for optimized zeros\r
+ - `opt`: flag for optimized zeros
  - `--> opt=0` -> not optimized,
  - `--> opt=1` -> optimized,
  - `--> opt=2` -> optimized with at least one zero at band-center,
@@ -79,7 +79,7 @@ struct RealDSM <: AbstractDSM
 	Hinf::Float64
 	opt::Int
 end
-RealDSM(;order=3, OSR=16, M=1, f0=0, form=:CRFB, Hinf=1.5, opt=0) =
+RealDSM(;order=3, OSR=16, M=1, f0=0, form=:CRFB, Hinf=1.5, opt=1) =
 	RealDSM(order, OSR, M, f0, form, Hinf, opt)
 
 struct QuadratureDSM <: AbstractDSM

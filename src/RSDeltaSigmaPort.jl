@@ -30,6 +30,8 @@ import SpecialFunctions: erfinv
 import Interpolations
 import FFTW: fft, fftshift
 import DSP: conv, filt
+import Optim
+import Optim: optimize, GoldenSection, Fminbox, IPNewton, GradientDescent
 #import Polynomials #roots, Polynomial
 import Printf: @sprintf
 using CMDimData
@@ -44,8 +46,6 @@ import ControlSystems
 using ControlSystems: isdiscrete
 #using ControlSystems: zpk, zpkdata
 
-"Availability of `fmincon` function from the Optimization Toolbox"
-const FMINCON_AVAIL = false #NEEDSTOOLKIT
 const FIRPM_AVAIL = false #NEEDSTOOLKIT
 
 function throw_unreachable()
