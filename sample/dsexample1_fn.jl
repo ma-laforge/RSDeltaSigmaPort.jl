@@ -22,7 +22,7 @@ function dsexample1(dsm::AbstractDSM; ampdB::Float64=-3.0, ftest=nothing, LiveDe
 	#Derived parameters
 	nlev = dsm.M + 1
 	dsmtypestr = str_modulatortype(dsm)
-	println("\t", dsmtypestr, " Example... ")
+	println("*** ", dsmtypestr, " example... ")
 	#TODO: support plot attributes?:
 	sizes = Dict{Symbol, Any}(
 		:lw => 1, #LineWidth
@@ -128,9 +128,4 @@ function dsexample1(dsm::AbstractDSM; ampdB::Float64=-3.0, ftest=nothing, LiveDe
 	return results
 end
 
-opt=2
-#dsm = RealDSM(order=5, OSR=32, form=:CRFB, Hinf=1.5, opt=2)
-dsm = RealDSM(order=5, OSR=32, form=:CRFB, Hinf=1.5, opt=opt)
-results = dsexample1(dsm, LiveDemo=true)
-
-:END_OF_EXAMPLE
+#Last line
