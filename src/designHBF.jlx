@@ -1,5 +1,6 @@
 #RSDeltaSigma: designHBF() algorithm
 #-------------------------------------------------------------------------------
+#Renamed to .jlx extension to skip regression tests.
 #=IMPORTANT
 designHBF6() (a version that doesn't need firpm()) no longer exists in the
 source code used in this port. It actually just copies designHBF7().
