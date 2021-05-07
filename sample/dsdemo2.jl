@@ -11,7 +11,7 @@ j=im
 println("\n*** 5th order, 2-level, baseband modulator")
 OSR = 32
 N = 8192
-dsm = RealDSM(order=5, OSR=OSR, opt=1)
+dsm = RealDSM(order=5, OSR=OSR, Hinf=1.5, opt=1)
 
 @info("Performing ΔΣ simulation..."); flush(stdout); flush(stderr)
 #-------------------------------------------------------------------------------
@@ -52,7 +52,7 @@ println("\n*** 8th order, 2-level, bandpass modulator")
 OSR=64
 f0 = 1/8
 N = 8192
-dsm = RealDSM(order=8, OSR=OSR, f0=f0, opt=1)
+dsm = RealDSM(order=8, OSR=OSR, f0=f0, Hinf=1.5, opt=1)
 display(dsm)
 
 @info("Performing ΔΣ simulation..."); flush(stdout); flush(stderr)
