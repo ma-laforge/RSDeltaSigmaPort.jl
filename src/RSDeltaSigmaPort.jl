@@ -29,10 +29,10 @@ import LinearAlgebra: norm, diagm, eigen, cond
 import SpecialFunctions: erfinv
 import Interpolations
 import FFTW: fft, fftshift
-import DSP: conv, filt
+import DSP: conv, filt, remez
 import Optim
 import Optim: optimize, GoldenSection, Fminbox, IPNewton, GradientDescent
-#import Polynomials #roots, Polynomial
+import Polynomials: Polynomial #roots
 import Printf: @sprintf
 using CMDimData
 using CMDimData.MDDatasets
@@ -45,8 +45,6 @@ CMDimData.@includepkg EasyPlotInspect
 import ControlSystems
 using ControlSystems: isdiscrete
 #using ControlSystems: zpk, zpkdata
-
-const FIRPM_AVAIL = false #NEEDSTOOLKIT
 
 function throw_unreachable()
 	msg = "Code expected to be unreachable with exception handling"
@@ -83,6 +81,7 @@ include("realizeNTF.jl")
 include("realizeNTF_ct.jl")
 include("filter_base.jl")
 include("exampleHBF.jl")
+include("designHBF.jl")
 include("simulateHBF.jl")
 include("calc_spectrum.jl")
 include("plot_base.jl")
@@ -159,7 +158,7 @@ export stuffABCD, scaleABCD, mapABCD, partitionABCD
 export mapCtoD
 
 #Filters:
-export exampleHBF
+export exampleHBF, designHBF
 
 #Simulations:
 export simulateDSM, simulateMS

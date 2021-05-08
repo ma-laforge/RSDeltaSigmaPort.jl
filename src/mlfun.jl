@@ -161,4 +161,12 @@ function interp(v, OSR::Int)
 	result = result[Δs .+ (1:length(v_0))]
 	return result
 end
+
+#Evaluate polynomial p at value x
+function polyval(p, x)
+	#NOTE: [1, 2, 3] => 1 + 2x¹ + 3x²
+	polyfn = Polynomial(p)
+	return polyfn.(x) #Evaluates polynomial
+end
+
 #Last line

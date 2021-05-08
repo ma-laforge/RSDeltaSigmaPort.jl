@@ -1,25 +1,25 @@
 #Demonstrate Saramaki half-band filter design
 using RSDeltaSigmaPort
 using RSDeltaSigmaPort.EasyPlot #set, cons
-using RSDeltaSigmaPort: csdsize2, linlin
+import RSDeltaSigmaPort: csdsize2, linlin
 import RSDeltaSigmaPort: BoundingBox
+import RSDeltaSigmaPort: fft
 import Printf: @sprintf
 j=im
 
-use_canned_example = true
+use_canned_example = false
 println("\n*** Half-band filter design (ALPHA VERSION)")
 f1=f2=0 #Define variables
 title=nothing
 if use_canned_example
 	(f1, f2) = exampleHBF(2)
 else
-	if !RSDeltaSigmaPort.FIRPM_AVAIL
-		throw("firpm() not available. Cannot run designHBF().")
-	end
 	fp = 0.9*0.25
-	delta = undbv( -100 )
+	@warn("Need firls() equivalent to converge for small dB values.")
+	#delta = undbv( -100 )
+	delta = undbv( -25 )
 	title = "designHBF Iterations"
-	(f1, f2, info) = designHBF(fp,delta,1)
+	(f1, f2, info) = designHBF(fp, delta=delta, debug=true)
 end
 n1 = length(f1); n2 = length(f2)
 complexity = sum(csdsize2(f1)) + (2*n1-1)*(n2+sum(csdsize2(f2))-1) #VERIFYME
