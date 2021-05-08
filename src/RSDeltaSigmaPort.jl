@@ -9,7 +9,36 @@
      from within that parent function).
 =#
 
+"""`RSDeltaSigmaPort`: A port of Richard Schreier's Delta Sigma Toolbox
 
+# Sample usage
+```julia-repl
+julia> using RSDeltaSigmaPort #Will take a while to load, compile, etc...
+julia> import RSDeltaSigmaPort: @runsample
+
+julia> @runsample("dsdemo1.jl")
+julia> @runsample("dsdemo2.jl")
+julia> @runsample("dsdemo3.jl")
+julia> @runsample("dsdemo4_audio.jl")
+julia> @runsample("dsdemo5.jl")
+julia> @runsample("dsdemo6.jl")
+julia> @runsample("dsexample1.jl")
+julia> @runsample("dsexample2.jl")
+julia> @runsample("demoLPandBP.jl")
+```
+
+# See also:
+[`simulateDSM`](@ref), [`simulateMS`](@ref), [`simulateSNR`](@ref), [`simulateHBF`](@ref) | 
+[`synthesizeNTF`](@ref), [`realizeNTF`](@ref), [`realizeNTF_ct`](@ref) | 
+[`calculateSNR`](@ref), [`peakSNR`](@ref), [`predictSNR`](@ref) | 
+[`calculateTF`](@ref), [`evalTF`](@ref), [`evalTFP`](@ref) | 
+[`stuffABCD`](@ref), [`scaleABCD`](@ref), [`mapABCD`](@ref), [`partitionABCD`](@ref) | 
+[`mapCtoD`](@ref), [`mapQtoR`](@ref) | 
+[`exampleHBF`](@ref), [`designHBF`](@ref), [`simulateHBF`](@ref) | 
+[`pulse`](@ref), [`impL1`](@ref) | 
+[`lollipop`](@ref), [`logsmooth`](@ref) | 
+[`documentNTF`](@ref), [`plotExampleSpectrum`](@ref)
+"""
 module RSDeltaSigmaPort
 
 const rootpath = realpath(joinpath(@__DIR__, ".."))

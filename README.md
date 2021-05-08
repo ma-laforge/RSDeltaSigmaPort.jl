@@ -39,12 +39,12 @@ And demos:
  1. [Plotting](#Plotting)
  1. [Installation](#Installation)
  1. [Running sample scripts](#SampleScripts)
+ 1. [Function (API) help](#APIHelp)
  1. [Julia tips](doc/juliatips.md)
     1. [Useful functions](doc/juliatips.md#FunctionLibraries)
     1. [`linspace()` & `logspace()`](doc/juliatips.md#LinLogSpace)
  1. [Known limitations](#KnownLimitations)
     1. [TODO](doc/todo.md)
-
 
 <a name="Description"></a>
 ## Description
@@ -116,6 +116,25 @@ julia> @runsample("dsexample1.jl")
 julia> @runsample("dsexample2.jl")
 julia> @runsample("demoLPandBP.jl")
 ```
+
+<a name="APIHelp"></a>
+## Function (API) help
+Typing `?RSDeltaSigmaPort` in Julia's command line gives you a list of available functions:
+```julia-repl
+julia> ?
+help?> RSDeltaSigmaPort
+```
+
+Information on individual functions can be obtained in a similar fashion. Example:
+```julia-repl
+julia> ?
+help?> simulateDSM
+```
+
+### Original documentation
+Richard Schreier's original documentation is available here:
+ - [`original_source/delsig/OnePageStory.pdf`](original_source/delsig/OnePageStory.pdf)
+ - [`original_source/delsig/DSToolbox.pdf`](original_source/delsig/DSToolbox.pdf)
 
 <a name="KnownLimitations"></a>
 ## Known limitations
