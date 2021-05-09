@@ -60,19 +60,21 @@ import Interpolations
 import FFTW: fft, fftshift
 import DSP: conv, filt, remez
 import Optim
-import Optim: optimize, GoldenSection, Fminbox, IPNewton, GradientDescent
-import Polynomials: Polynomial #roots
+import Optim: optimize, GoldenSection, IPNewton, GradientDescent, LBFGS
+import Optim: Fminbox, TwiceDifferentiableConstraints
+import Polynomials
+import Polynomials: Polynomial
 import Printf: @sprintf
 using CMDimData
 using CMDimData.MDDatasets
 using CMDimData.EasyPlot
-using CMDimData.EasyPlot: BoundingBox #Use this one to avoid version conflicts with Graphics.
 using CMDimData.EasyPlot.Colors #Should be ok with whatever version it needs
+import CMDimData.EasyPlot: BoundingBox #Use this one to avoid version conflicts with Graphics.
 using InspectDR
 CMDimData.@includepkg EasyPlotInspect
 
 import ControlSystems
-using ControlSystems: isdiscrete
+import ControlSystems: isdiscrete
 #using ControlSystems: zpk, zpkdata
 
 function throw_unreachable()
@@ -111,6 +113,7 @@ include("realizeNTF_ct.jl")
 include("filter_base.jl")
 include("exampleHBF.jl")
 include("designHBF.jl")
+include("designLCBP.jl")
 include("simulateHBF.jl")
 include("calc_spectrum.jl")
 include("plot_base.jl")
@@ -187,7 +190,7 @@ export stuffABCD, scaleABCD, mapABCD, partitionABCD
 export mapCtoD
 
 #Filters:
-export exampleHBF, designHBF
+export exampleHBF, designHBF, designLCBP
 
 #Simulations:
 export simulateDSM, simulateMS

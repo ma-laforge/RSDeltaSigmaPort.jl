@@ -169,4 +169,8 @@ function polyval(p, x)
 	return polyfn.(x) #Evaluates polynomial
 end
 
+#_roots so as to not confuse it with Polynomials.roots
+#NOTE: Polynomial expects the coefficients in opposite order:
+_roots(p) = Polynomials.roots(Polynomial(reverse(p)))
+
 #Last line
