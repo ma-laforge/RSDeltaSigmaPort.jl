@@ -72,7 +72,7 @@ requires t2<1.
 """
 function LCparam2tf(param::LCBPParameters, k::Float64=1.0)
 	l = param.l; c = param.c
-	f0 = mean(1 / sqrt.(l .* c)) / (2π *pi)
+	f0 = mean(1 ./ sqrt.(l .* c)) ./ (2π *pi)
 	n = length(l)
 
 	gu = param.gu

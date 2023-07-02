@@ -26,7 +26,7 @@ function simulateHBF(x, f1, f2, mode::Int=0)
 	if isa(f2, Vector{CoeffCSD})
 		f2 = values(f2)
 	end
-	x = x[:]
+	x = (x[:])' #Row matrix
 	f1 = f1[:]; f2 = f2[:] #Redundant unless `val`s are not always simple numbers
 	n1 = length(f1); n2 = length(f2)
 	f2imp = vcat(f2[end:-1:1], f2)

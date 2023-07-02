@@ -218,7 +218,7 @@ function _synthesizeNTF1_z(order::Float64, osr::Int, opt, z::Vector{Complex{Floa
 					mb2 = 1 .+ me2*exp.(j*w)
 					p = mb2 .- sqrt.(mb2 .^ 2 .- 1)
 					out = findall(abs.(p) .> 1)
-					p[out] = 1/p[out] #reflect poles to be inside the unit circle.
+					p[out] = 1 ./ p[out] #reflect poles to be inside the unit circle.
 					p = cplxpair(p)
 					ntf.z = z;	ntf.p = p
 					f = real(evalTF(ntf, z_inf))-H_inf
@@ -257,7 +257,7 @@ function _synthesizeNTF1_z(order::Float64, osr::Int, opt, z::Vector{Complex{Floa
 				p = mb2 .- sqrt.(mb2 .^ 2 .- 1)
 				#reflect poles to be inside the unit circle.
 				out = findall(abs.(p) .> 1)
-				p[out] = 1/p[out]
+				p[out] = 1 ./ p[out]
 				p = cplxpair(p)
 				ntf.z = z; ntf.p = p
 				f = real(evalTF(ntf, z_inf)) - H_inf
